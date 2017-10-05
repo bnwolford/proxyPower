@@ -5,8 +5,10 @@ Liu et al, 2017 introduced the concept of GWAS by proxy (GWAX): performing case-
 
 The Willer group recognizes that some biobanks, such as HUNT, will have cases and proxy-cases for diseases (e.g. Type 2 diabetes or myocardianl infarction) and has developed tools for accounting for these proxy-cases in various ways. The tools available here are useful for 1) Identifying proxy-cases in your cohort and 2) Running GWAS models that account for them.
 
-#proxyCaseAssign.py 
+# proxyCaseAssign.py 
 
-#proxyCaseAssign1dr.py
+# proxyCaseAssign1dr.py
 
-#proxyMetaAnalaysis.py
+# proxyMetaAnalaysis.py
+
+# proxyGenomicControl.R
