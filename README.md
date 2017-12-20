@@ -14,5 +14,5 @@ The Willer group recognizes that some biobanks, such as the Nord-Trøndelag Heal
 
 2. Running statistical methods that model proxy-cases
 
-Please view the [provided PDF](https://github.com/bnwolford/proxyPower/proxyPower.pdf) for more information. These are beta versions and are still under development. More scripts are forthcoming.
+Please view the [provided PDF](https://github.com/bnwolford/proxyPower/blob/master/proxyPower.pdf) for more information. These are beta versions and are still under development. More scripts are forthcoming.
 
