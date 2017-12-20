@@ -10,5 +10,5 @@ The Willer group recognizes that some biobanks, such as the Nord-Trøndelag Heal
 1. Identifying proxy-cases in your cohort
 2. Running statistical methods that model proxy-cases
 
-For access to beta versions, please email me at bwolford@umich.edu.
+These are beta versions and are still under development. More scripts are coming! 
 
