@@ -1,0 +1,358 @@
+#!/usr/bin/env python
+
+#===============================================================================
+# Copyright (c) 2017 Brooke Wolford
+# Lab of Dr. Cristen Willer and Dr. Mike Boehnke
+# University of Michigan
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+#==============================================================================
+
+# Python 2.7.6
+############################
+##### IMPORT MODULES #######
+###########################
+import subprocess
+import argparse
+from itertools import islice
+import gzip, re, os, math, sys
+import copy
+
+
+###########################
+##### PARSE ARGUMENTS ####
+###########################
+def get_settings():
+  parser = argparse.ArgumentParser(
+    description='''Script to perform proxy-case assignment using kinship matrix from KING2, self reported affected relative status of first degree relatives and case/control status from EHR derived phenotypes. The default is an output of the phenotype file with an additional column holding the proxy-case assignment.''')
+  parser.add_argument("-k", "--kinship", help="Kinship from KING2 and requires header", type=str)
+  parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be IID. Header expected",type=str,required=True)
+  parser.add_argument("-cr","--columnRelative",help="0-based column number for first degree relative information from survey. Expects 2 for case and 1 for control [default=11]",type=int,default=11)
+  parser.add_argument("-cp","--columnPhenotype",help="0-based column number for phenotype information. Expects 2 for yes, 1 for no, 3 for unknown and NA for not available [default=12]",type=int,default=12)
+  parser.add_argument("-o", "--output",help="Type of output file (BOLT-LMM=B, PLINK=P); default is additional column to phenotype file", type=str)
+  parser.add_argument("-cc", "--conservControl", help="Requires conservative control (unknown or missing on self report questions are not allowed to be controls), less stringent control is default",action="store_true")
+  parser.add_argument("-x", "--proxy",help="Type of logic used to identify proxy-cases (all=A, kinship only=K, self report only=SR, self report minus kinship=SMK, self report plus kinship=SPK",type=str,required=True)
+  parser.add_argument("-n","--number",help="Name of file in which to print number of cases/proxy-cases every sample is related to. If file is not provided then this functionality will not happen.",type=str)
+  args = parser.parse_args()
+  return args
+
+
+############################
+######### FUNCTIONS ########
+############################
+
+def is_first_degree_relative(kinship):
+  return (float(kinship) >= 0.177 and float(kinship) <= 0.354)
+
+# read kinship file, assumes FID and IID are equal because no family info
+def readKinship(file):
+  kinDict = {}  # intialize
+  f = open(file, "r")
+  next(f)  # skip header
+  for line in f:
+    line = line.rstrip()
+    (FID1, IID1, FID2, IID2, NSNP, HETHET, IBS0, KinVal) = line.split("\t")
+    if IID1 not in kinDict.keys():
+      kinDict[IID1] = {}  # initalize
+    kinDict[IID1][IID2] = KinVal
+  return kinDict
+
+#read phenotype file with case/control information for sample and affected status of relatives
+def readPheno(file):
+  phenoDict = {}  # initialize
+  totalCol=0 #initialize count of columns so we know what is new column to add proxycase assignment
+  f = open(file, "r")
+  next(f)  # skip header
+  for line in f:
+    line = line.rstrip()
+    line_list = line.split("\t")
+    phenoDict[line_list[0]] = line_list
+    totalCol=len(line_list)
+  return phenoDict, totalCol
+
+#Perform proxy case assignment using information on case/control status of the sample and the kinship matrix with the rest of samples in the study 
+def proxy_via_kinship(pd, kd, cc, tc, cp):
+  pd_kinship = copy.deepcopy(pd)
+
+  if cc:
+    print >> sys.stderr, 'Conservative control functionality is not available with kinship only option\n'
+
+  for sample in pd:
+    if pd[sample][cp] == '2':  # if case
+      pd_kinship[sample].append("1")  # set as case
+    elif pd[sample][cp] == '1':  # if control
+      pd_kinship[sample].append("0")  # set as control
+    else: #if missing or NA
+      pd_kinship[sample].append("NA") #missing
+      sys.stderr.write("Sample %s is neither case (2) nor control (1).\n" % sample)
+
+  for ID1, v in kd.items():  # for every ID1 in kinship dictionary
+    for ID2, kinship in v.items():  # for every ID2 in kinship dictionary
+      if ID1 in pd.keys() and ID2 in pd.keys():
+
+        if is_first_degree_relative(kinship):  # if first degree relative
+          if pd[ID1][cp] == '2' and pd[ID2][cp] == '1':  # if case and unaffected
+            if pd_kinship[ID2][tc] == 'NA' or float(pd_kinship[ID2][tc]) < 0.5:
+              pd_kinship[ID2][tc] = "0.5"  # assign as proxy-case
+          elif pd[ID1][cp] == '1' and pd[ID2][cp] == '2':  # if unaffected and case
+            if pd_kinship[ID1][tc] == 'NA' or float(pd_kinship[ID1][tc]) < 0.5:
+              pd_kinship[ID1][tc] = "0.5"  # assign as proxy-case
+
+        else:  
+          print >> sys.stderr, "%s and %s are not first degree relatives based on kinship\n"  % (ID1,ID2)
+
+  return pd_kinship
+
+#Perform proxy case assignment using information on case/control status of teh sample and the self reported status of first degree relatives
+def proxy_via_selfreport(pd, cc, cp, cr):
+  pd_sr = copy.deepcopy(pd)
+
+  for sample in pd:  # for every sample id in phenotype file
+    if pd[sample][cp] == '2':  # if case
+      pd_sr[sample].append("1")  # set as case
+
+    elif pd[sample][cp] == '1':  # if unaffected
+
+      if pd[sample][cr] == '2':  # if have an affected first degree relative
+        pd_sr[sample].append("0.5")  # set as proxy-case
+
+      elif pd[sample][cr] == '1':  # if dont have an affected first degree relative
+        pd_sr[sample].append("0") #set as control
+
+      else: #if missing or NA
+        if cc: #if conservative control option
+          pd_sr[sample].append("NA")
+        else:
+          pd_sr[sample].append("0") #set as control if conservative control option not invoked
+    
+    else: #if missing or NA
+      pd_sr[sample].append("NA")
+      sys.stderr.write("Sample %s is neither case (2) nor control (1).\n" % sample)
+      
+  return pd_sr
+
+#Refine proxy case assignment by self report by considering kinship matrix (e.g. if a proxy-case's affected relative is a case in the study the proxy-case will become NA)
+def proxy_via_selfreport_minus_kinship(pd, kd, tc):
+  pd_smk = copy.deepcopy(pd)
+
+  for ID1, v in kd.items():  # for every ID1 in kinship dictionary
+    for ID2, kinship in v.items():  # for every ID2 in kinship dictionary
+      if is_first_degree_relative(kinship):  # if first degree relative
+        if ID1 in pd.keys() and ID2 in pd.keys():  # if IDs from kinship matrix are in phenotype file
+          # reassign to NA if proxy-case or 2nd degree proxy-case has case in cohort
+          if (pd[ID1][tc] == "0.5" and pd[ID2][tc] == "1"):
+            pd_smk[ID1][tc] = "NA"
+          elif (pd[ID1][tc] == "1" and pd[ID2][tc] == "0.5"):
+            pd_smk[ID2][tc] = "NA"
+          # reassign to NA if control has case in cohort
+          if (pd[ID1][tc] == "0" and pd[ID2][tc] == "1"):
+            pd_smk[ID1][tc] = "NA"
+          elif (pd[ID1][tc] == "1" and pd[ID2][tc] == "0"):
+            pd_smk[ID2][tc] = "NA"
+
+      else:  
+        print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self report\n" % (ID1,ID2)
+
+  return pd_smk
+
+
+#Refine proxy case assignemnt by self report by considering kinship matrix (e.g. if a control does not report an affected first degree relative but we identify one in the study using kinship matrix, the control will become a proxy-case)
+def proxy_via_selfreport_plus_kinship(pd, kd, tc):
+  pd_spk = copy.deepcopy(pd)
+
+  for ID1, v in kd.items():  # for every ID1 in kinship dictionary
+    for ID2, kinship in v.items():  # for every ID2 in kinship dictionary
+
+      if is_first_degree_relative(kinship):  # if first degree relative
+        if ID1 in pd.keys() and ID2 in pd.keys():  # if IDs from kinship matrix are in phenotype file
+          # reassign to 0.5 if control is 1dr to a case or NA from self report (consv control) is related to a case
+          if (pd[ID1][tc] == "0" and pd[ID2][tc] == "1") or (pd[ID1][tc] == "NA" and pd[ID2][tc] == "1"):
+            if pd_spk[ID1][tc] == 'NA' or float(pd_spk[ID1][13]) < 0.5:
+              pd_spk[ID1][tc] = "0.5"
+          elif (pd[ID1][tc] == "1" and pd[ID2][tc] == "0") or (pd[ID1][tc] == "1" and pd[ID2][tc] == "NA"):
+            if pd_spk[ID2][tc] == 'NA' or float(pd_spk[ID2][tc]) < 0.5:
+              pd_spk[ID2][tc] = "0.5"
+
+      else:  
+        print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self\report\n" % (ID1,ID2)
+
+  return pd_spk
+
+#print output formatted for BOLT-LMM, requires first 10 columns of phenoFile are "FID", "IID", "PATID", "MATID", "Sex", "BirthYear", "batch", "PC1", "PC2", "PC3", "PC4" and last column is F which holds proxy-case assignment
+def BOLT_print(pd, tc):
+  # assumes BOLT-LMM sees -9 and -NA as missing data in --phenoFile (--phenoCol will be F)
+  header = ["FID", "IID", "PATID", "MATID", "Sex", "BirthYear", "batch", "PC1", "PC2", "PC3", "PC4", "F"]  # list of header strings
+  print "\t".join(header)  # print header
+  for sample in pd:
+    data = []
+    for x in pd[sample][0:11]: #assumes first 10 columns are as seen in header
+      data.append(x)
+    data.append(pd[sample][tc])
+    print "\t".join(str(x) for x in data)
+
+#if -n is provided an output file name, count the number of cases and proxy-cases a given sample is related to within the study
+def count_relatives(file, kd, pd, tc):
+
+  f1 = open(file, 'w+')
+
+  for sample in pd: #for every sample in phenotype file
+
+    list=search_nested_dict(kd,sample) #find all relatives
+
+    #initialize counts
+    proxy_case_count=0
+    case_count=0
+    relative_count=len(list)
+
+    #identify if relative is proxy case or case
+    for relative in list:
+      if relative in pd.keys(): #if relative is in phenotype file
+        if pd[relative][tc]=="0.5":
+          proxy_case_count+=1
+        elif pd[relative][tc]=="1":
+          case_count+=1
+
+    data_to_print=[sample,proxy_case_count,case_count,relative_count]
+    print >> f1, "\t".join(str(x) for x in data_to_print)
+
+  f1.close()
+
+def search_nested_dict(dict,key):
+  found=[]
+  for masterKey,masterValue in dict.iteritems():
+    if key in masterKey:
+      for ID, v in masterValue.items():
+        found.append(ID)
+    for childKey,childValue in masterValue.iteritems():
+      if key in childKey:
+          found.append(masterKey)
+  return found
+
+#########################
+########## MAIN #########
+#########################
+
+def main():
+  args = get_settings()
+
+  try:
+    args.number
+  except NameError:
+    args.number = None
+
+  #always read phenotype file with self report information
+  phenoDict, totalCol = readPheno(args.pheno)
+  
+  if (args.number is not None) or args.proxy=="SMK" or args.proxy=="SPK" or args.proxy=="A" or args.proxy=="K": #only read kinship file into memory if you have to
+    kinDict = readKinship(args.kinship)  # read kinship file
+
+  # print kinDict
+  # print phenoDict
+
+  cp=args.columnPhenotype
+  cr=args.columnRelative
+
+
+  ########### Self report minus kinship ################
+  if args.proxy == "SMK":  # self report minus kinship
+    phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cr)  # self report
+    phenoDict_SRMK = proxy_via_selfreport_minus_kinship(phenoDict_SR, kinDict, totalCol)  # self report minus kinship
+
+    if args.number is not None:
+      count_relatives(args.number,kinDict,phenoDict_SRMK,totalCol)
+
+    if args.output == "B":
+      BOLT_print(phenoDict_SRMK,totalCol)
+    elif args.output == "P":
+      print >> sys.stderr, "This functionality not available yet\n"
+    else:
+      for sample in phenoDict_SRMK:
+        print "\t".join(phenoDict_SRMK[sample])
+
+  ############ self report only #####################
+  elif args.proxy == "SR":  # self report only
+    phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cr)  # self report
+    
+    if args.number is not None:
+      count_relatives(args.number,kinDict,phenoDict_SR, totalCol)
+
+    if args.output == "B":
+      BOLT_print(phenoDict_SR, totalCol)
+    elif args.output == "P":
+      print >> sys.stderr, "This functionality not available yet\n"
+    else:
+      for sample in phenoDict_SR:
+        print "\t".join(phenoDict_SR[sample])
+
+  ############# self report plus kinship ##############
+  elif args.proxy == "SPK":  # self report plus kinship
+    phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cr)  # self report
+    phenoDict_SRPK = proxy_via_selfreport_plus_kinship(phenoDict_SR, kinDict, totalCol)  # self report plus kinships
+
+    if args.number is not None:
+      count_relatives(args.number,kinDict,phenoDict_SRPK,totalCol)
+
+    if args.output == "B":
+      BOLT_print(phenoDict_SRPK,totalCol)
+    elif args.output == "P":
+      print >> sys.stderr, "This functionality not available yet\n"
+    else:
+      for sample in phenoDict_SRPK:
+        print "\t".join(phenoDict_SRPK[sample])
+
+        ############### kinship only ####################
+  elif args.proxy == "K":  # kinship only
+    phenoDict_K = proxy_via_kinship(phenoDict, kinDict, args.conservControl, totalCol, cp)
+
+    if args.number is not None:
+      count_relatives(args.number,kinDict,phenoDict_K, totalCol)
+
+    if args.output == "B":
+      BOLT_print(phenoDict_K, totalCol)
+    elif args.output == "P":
+      print >> sys.stderr, "This functionality not available yet\n"
+    else:
+      for sample in phenoDict_K:
+        print "\t".join(phenoDict_K[sample])
+
+  ################# all proxy case designation options calculated #####################
+
+  elif args.proxy == "A":  # all
+    phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cr)  # self report
+    phenoDict_SRMK = proxy_via_selfreport_minus_kinship(phenoDict_SR, kinDict, totalCol)  # self report minus kinship
+    phenoDict_SRPK = proxy_via_selfreport_plus_kinship(phenoDict_SR, kinDict, totalCol)  # self report plus kinships
+    phenoDict_K = proxy_via_kinship(phenoDict, kinDict, args.conservControl, totalCol, cp) #self report using only kinship
+
+    if args.number is not None:
+      print >> sys.stderr, "This functionality is not available when -x A is invoked\n"
+
+    if args.output == "B" or args.output == "P" or args.output == "S":
+      print >> sys.stderr, "This functionality not possible when -x A is invoked\n"
+    else:
+      for sample in phenoDict:
+        print "\t".join([sample, phenoDict_SR[sample][totalCol], phenoDict_SRMK[sample][totalCol], phenoDict_SRPK[sample][totalCol], phenoDict_K[sample][totalCol]])
+
+  else:
+    print >> sys.stderr, "Option for kinship designation not correct. Please use iether SMK, SR, SPK, K, or A.\n"
+
+
+# call main
+if __name__ == "__main__":
+  main()
+
