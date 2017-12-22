@@ -279,7 +279,7 @@ def main():
     print >> sys.stdout, "Assigning proxy-cases based on self report (-x SMK)"
 
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cm, cf, cs)  # self report
-    print >> sys.stdout, "Finished assigning proxy-cases baed on self report\n"
+    print >> sys.stdout, "Finished assigning proxy-cases based on self report\n"
     phenoDict_SRMK = proxy_via_selfreport_minus_kinship(phenoDict_SR, kinDict, totalCol)  # self report minus kinship
     print >> sys.stdout, "Finished refining proxy-case assignment based on kinship\n"
 
