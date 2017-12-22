@@ -116,8 +116,8 @@ def proxy_via_kinship(pd, kd, cc, tc, cp):
           elif pd[ID1][cp] == '0' and pd[ID2][cp] == '1':  # if unaffected and case
             if pd_kinship[ID1][tc] == 'NA' or float(pd_kinship[ID1][tc]) < 0.5: #if control or missing
               pd_kinship[ID1][tc] = "0.5"  # assign as proxy-case
-        else:  
-          print >> sys.stderr, "%s and %s are not first degree relatives based on kinship\n"  % (ID1,ID2)
+        #else:  
+          #print >> sys.stderr, "%s and %s are not first degree relatives based on kinship\n"  % (ID1,ID2)
 
   return pd_kinship
 
@@ -146,7 +146,7 @@ def proxy_via_selfreport(pd, cc, cp, cm, cf, cs):
     
     else: #if missing or NA for case
       pd_sr[sample].append("NA") #missing
-      sys.stderr.write("Sample %s is neither case (1) nor control (0)\n." % sample)
+      #sys.stderr.write("Sample %s is neither case (1) nor control (0)\n." % sample)
       
   return pd_sr
 
@@ -168,8 +168,8 @@ def proxy_via_selfreport_minus_kinship(pd, kd, tc):
             pd_smk[ID1][tc] = "NA"
           elif (pd[ID1][tc] == "1" and pd[ID2][tc] == "0"):
             pd_smk[ID2][tc] = "NA"
-      else:  
-        print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self report\n" % (ID1,ID2)
+      #else:  
+        #print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self report\n" % (ID1,ID2)
 
   return pd_smk
 
@@ -190,8 +190,8 @@ def proxy_via_selfreport_plus_kinship(pd, kd, tc):
             if pd_spk[ID2][tc] == 'NA' or float(pd_spk[ID2][tc]) < 0.5:
               pd_spk[ID2][tc] = "0.5"
 
-      else:  
-          print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self report\n" % (ID1,ID2)
+      #else:  
+          #print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self report\n" % (ID1,ID2)
 
   return pd_spk
 
