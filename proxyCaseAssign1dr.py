@@ -114,8 +114,8 @@ def proxy_via_kinship(pd, kd, cc, tc, cp):
             if pd_kinship[ID1][tc] == 'NA' or float(pd_kinship[ID1][tc]) < 0.5:
               pd_kinship[ID1][tc] = "0.5"  # assign as proxy-case
 
-        else:  
-          print >> sys.stderr, "%s and %s are not first degree relatives based on kinship\n"  % (ID1,ID2)
+        #else:  
+          #print >> sys.stderr, "%s and %s are not first degree relatives based on kinship\n"  % (ID1,ID2)
 
   return pd_kinship
 
@@ -143,7 +143,7 @@ def proxy_via_selfreport(pd, cc, cp, cr):
     
     else: #if missing or NA
       pd_sr[sample].append("NA")
-      sys.stderr.write("Sample %s is neither case (2) nor control (1).\n" % sample)
+      #sys.stderr.write("Sample %s is neither case (2) nor control (1).\n" % sample)
       
   return pd_sr
 
@@ -166,8 +166,8 @@ def proxy_via_selfreport_minus_kinship(pd, kd, tc):
           elif (pd[ID1][tc] == "1" and pd[ID2][tc] == "0"):
             pd_smk[ID2][tc] = "NA"
 
-      else:  
-        print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self report\n" % (ID1,ID2)
+      #else:  
+        #print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self report\n" % (ID1,ID2)
 
   return pd_smk
 
@@ -189,8 +189,8 @@ def proxy_via_selfreport_plus_kinship(pd, kd, tc):
             if pd_spk[ID2][tc] == 'NA' or float(pd_spk[ID2][tc]) < 0.5:
               pd_spk[ID2][tc] = "0.5"
 
-      else:  
-        print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self\report\n" % (ID1,ID2)
+      #else:  
+        #print >> sys.stderr, "%s and %s are not first degree relatives based on kinship, leaving proxy-case assignment as is from self\report\n" % (ID1,ID2)
 
   return pd_spk
 
@@ -258,9 +258,11 @@ def main():
 
   #always read phenotype file with self report information
   phenoDict, totalCol = readPheno(args.pheno)
-  
+  print >> sys.stdout, "Finished reading phenotype file %s\n" % args.pheno
+
   if (args.number is not None) or args.proxy=="SMK" or args.proxy=="SPK" or args.proxy=="A" or args.proxy=="K": #only read kinship file into memory if you have to
     kinDict = readKinship(args.kinship)  # read kinship file
+    print >> sys.stdout, "Finished reading kinship file %s\n" %args.kinship
 
   # print kinDict
   # print phenoDict
@@ -271,11 +273,16 @@ def main():
 
   ########### Self report minus kinship ################
   if args.proxy == "SMK":  # self report minus kinship
+    print >> sys.stdout, "Assigning proxy-cases based on self report (-x SMK)"
+    
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cr)  # self report
+    print >> sys.stdout, "Finished assigning proxy-cases based on self report\n"
     phenoDict_SRMK = proxy_via_selfreport_minus_kinship(phenoDict_SR, kinDict, totalCol)  # self report minus kinship
+    print >> sys.stdout, "Finished refining proxy-case assignment based on kinship\n"
 
     if args.number is not None:
       count_relatives(args.number,kinDict,phenoDict_SRMK,totalCol)
+      print >> sys.stdout, "Finished counting relatives of each sample who are proxy-cases or cases\n"
 
     if args.output == "B":
       BOLT_print(phenoDict_SRMK,totalCol)
@@ -284,13 +291,18 @@ def main():
     else:
       for sample in phenoDict_SRMK:
         print "\t".join(phenoDict_SRMK[sample])
+    print >> sys.stdout, "Finished printing results\n"
 
   ############ self report only #####################
   elif args.proxy == "SR":  # self report only
+    print >> sys.stdout, "Assigning proxy-cases based on self report (-x SR)"
+
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cr)  # self report
-    
+    print >> sys.stdout, "Finished assigning proxy-cases based on self report\n"
+
     if args.number is not None:
       count_relatives(args.number,kinDict,phenoDict_SR, totalCol)
+       print >> sys.stdout, "Finished counting relatives of each sample who are proxy-cases or cases\n"
 
     if args.output == "B":
       BOLT_print(phenoDict_SR, totalCol)
@@ -299,14 +311,21 @@ def main():
     else:
       for sample in phenoDict_SR:
         print "\t".join(phenoDict_SR[sample])
+    print >> sys.stdout, "Finished printing results\n"
 
   ############# self report plus kinship ##############
   elif args.proxy == "SPK":  # self report plus kinship
+    print >> sys.stdout, "Assigning proxy-cases based on self report plus kinship (-x SPK)"
+
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cr)  # self report
+    print >> sys.stdout, "Finished assigning proxy-cases based on self report\n"
     phenoDict_SRPK = proxy_via_selfreport_plus_kinship(phenoDict_SR, kinDict, totalCol)  # self report plus kinships
+    print >> sys.stdout, "Finished refining proxy-case assignment based on kinship\n"
 
     if args.number is not None:
       count_relatives(args.number,kinDict,phenoDict_SRPK,totalCol)
+      print >> sys.stdout, "Finished counting relatives of each sample who are proxy-cases or cases\n"
+
 
     if args.output == "B":
       BOLT_print(phenoDict_SRPK,totalCol)
@@ -315,13 +334,19 @@ def main():
     else:
       for sample in phenoDict_SRPK:
         print "\t".join(phenoDict_SRPK[sample])
+    print >> sys.stdout, "Finished printing results\n"
 
         ############### kinship only ####################
   elif args.proxy == "K":  # kinship only
+    print >> sys.stdout, "Assigning proxy-cases based on kinship (-x K)"
+
     phenoDict_K = proxy_via_kinship(phenoDict, kinDict, args.conservControl, totalCol, cp)
+    print >> sys.stdout, "Finished assigning proxy-case based on kinship\n"
 
     if args.number is not None:
       count_relatives(args.number,kinDict,phenoDict_K, totalCol)
+      print >> sys.stdout, "Finished counting relatives of each sample who are proxy-cases or cases\n"
+
 
     if args.output == "B":
       BOLT_print(phenoDict_K, totalCol)
@@ -330,14 +355,21 @@ def main():
     else:
       for sample in phenoDict_K:
         print "\t".join(phenoDict_K[sample])
+    print >> sys.stdout, "Finished printing results\n"
 
   ################# all proxy case designation options calculated #####################
 
   elif args.proxy == "A":  # all
+    print >> sys.stdout, "Assigning proxy-cases based on four types of logic (-x A)"
+
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cr)  # self report
+    print >> sys.stdout, "Finished assigning proxy-cases based on self report\n"
     phenoDict_SRMK = proxy_via_selfreport_minus_kinship(phenoDict_SR, kinDict, totalCol)  # self report minus kinship
+    print >> sys.stdout, "Finished refining proxy-case assignment based on kinship\n"
     phenoDict_SRPK = proxy_via_selfreport_plus_kinship(phenoDict_SR, kinDict, totalCol)  # self report plus kinships
+    print >> sys.stdout, "Finished refining proxy-case assignment based on kinship\n"
     phenoDict_K = proxy_via_kinship(phenoDict, kinDict, args.conservControl, totalCol, cp) #self report using only kinship
+    print >> sys.stdout, "Finished assigning proxy-cases based on kinship\n"
 
     if args.number is not None:
       print >> sys.stderr, "This functionality is not available when -x A is invoked\n"
@@ -347,6 +379,7 @@ def main():
     else:
       for sample in phenoDict:
         print "\t".join([sample, phenoDict_SR[sample][totalCol], phenoDict_SRMK[sample][totalCol], phenoDict_SRPK[sample][totalCol], phenoDict_K[sample][totalCol]])
+    print >> sys.stdout, "Finished printing results\n"
 
   else:
     print >> sys.stderr, "Option for kinship designation not correct. Please use iether SMK, SR, SPK, K, or A.\n"
