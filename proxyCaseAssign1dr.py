@@ -100,7 +100,7 @@ def proxy_via_kinship(pd, kd, cc, tc, cp):
       pd_kinship[sample].append("0")  # set as control
     else: #if missing or NA
       pd_kinship[sample].append("NA") #missing
-      sys.stderr.write("Sample %s is neither case (2) nor control (1).\n" % sample)
+      #sys.stderr.write("Sample %s is neither case (2) nor control (1).\n" % sample)
 
   for ID1, v in kd.items():  # for every ID1 in kinship dictionary
     for ID2, kinship in v.items():  # for every ID2 in kinship dictionary
