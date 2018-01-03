@@ -41,14 +41,14 @@ import copy
 ###########################
 def get_settings():
   parser=argparse.ArgumentParser(
-  description='''Script to convert proxy-case assignment phenotype file to a phenotype file ready for GWAS, GWAX, etc. Model definitions are 1=standard GWAS, 2=GWAS with proxy-cases removed from controls (i.e. cleaner controls), 3=GWAX with proxy-cases as cases, 4=Cases vs proxy-cases vs controls (i.e. appropriately modelling proxy-cases as intermediate), 5=Cases + proxy-cases vs controls'''
+  description='''Script to convert proxy-case assignment phenotype file to a phenotype file ready for analysis. Model definitions are 1=standard GWAS, 2=GWAS with proxy-cases removed from controls (i.e. cleaner controls), 3=GWAX with proxy-cases as cases, 4=Cases vs proxy-cases vs controls (i.e. appropriately modelling proxy-cases as intermediate), 5=Cases + proxy-cases vs controls.'''
 )
   parser.add_argument("-k","--kinship",help="Kinship from KING2 and requires header", type=str)
-  parser.add_argument("-p","--pheno",help="Phenotype file of any format and F column must be 0, 0.25, 0.5, 1 or NA.\nDefault expects format IID FID PATID MATID Sex BirthYear batch PC1 PC2 PC3 PC4 F. Requires header line. This file is read into memory.", type=str)
+  parser.add_argument("-p","--pheno",help="Phenotype file of any format. For Models 2-5 the F column must be 0, 0.25, 0.5, 1 or NA.\nDefault expects format IID FID PATID MATID Sex BirthYear batch PC1 PC2 PC3 PC4 F. Requires header line. This file is read into memory.", type=str)
   parser.add_argument("-c","--column",help="0-based column number for F column with 0, 0.25, 0.5, 1 or NA [default=12]",type=int,default=11)
   parser.add_argument("-o","--output",help="Full path for name and location of output file. Output file is ready for BOLT-LMM.", type=str)
-  parser.add_argument("-m","--model",help="Type of model and way to consider proxy-cases\n[1=standard GWAS, 2=GWAS with cleaner controls, 3=GWAX, 4=Cases vs proxy-cases vs controls, 5=Cases + proxy-cases vs controls]", type=int)
-  parser.add_argument("-r","--remove2dr",help="Use flag to print second degree relatives (0.25) as NA thereby removing those samples from analysis [default=FALSE]",action="store_true",dest='remove')
+  parser.add_argument("-m","--model",help="Type of model and way to consider proxy-cases\n[1=standard GWAS, 2=GWAS with cleaner controls, 3=GWAX, 4=Cases vs proxy-cases vs controls, 5=Cases + proxy-cases vs controls]\n", type=int)
+  parser.add_argument("-r","--remove2dr",help="Use flag to print second degree relatives (F=0.25) as NA thereby removing those samples from analysis [default=FALSE]",action="store_true",dest='remove')
   parser.set_defaults(remove=False)
   args=parser.parse_args()
   return args
@@ -92,10 +92,7 @@ def updateF(phenoDict,col,model,output,header):
     f=str(phenoDict[line][zc]) #save F value as string
 
     if model == 1: #standard GWAS
-      if f=="0.25":
-        phenoDict[line][zc]="NA" #convert 2nd degree proxy-case to NA
-      elif f=="0.5": 
-        phenoDict[line][zc]="0" #convert 1st degree proxy-case to control
+      print >> sys.stderr("Model 1 is Standard GWAS and a phenotype file for this analysis is created by proxyCaseAssign1dr.py or proxyCaseAssignAffRel.py based on the phenotype files provided there.\n")
 
     elif model == 2: #GWAS with cleaner controls
       if f=="0.25":
