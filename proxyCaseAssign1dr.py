@@ -49,6 +49,7 @@ def get_settings():
   parser.add_argument("-cc", "--conservControl", help="Requires conservative control (unknown or missing on self report questions are not allowed to be controls), less stringent control is default",action="store_true")
   parser.add_argument("-x", "--proxy",help="Type of logic used to identify proxy-cases (all=A, kinship only=K, self report only=SR, self report minus kinship=SMK, self report plus kinship=SPK",type=str,required=True)
   parser.add_argument("-n","--number",help="Name of file in which to print number of cases/proxy-cases every sample is related to. If file is not provided then this functionality will not happen.",type=str)
+  parser.add_argument("-m","--model1",help="Name of file in which to print model 1 (standard GWAS) phenotype file. This file will be similar to --pheno input file, but header for phenotype column will be F and values will be 1 for case, 0 for control, NA for missing for consistency with proxyModel.py phenotype files\n",type=str,required=True)
   args = parser.parse_args()
   return args
 
@@ -77,14 +78,18 @@ def readKinship(file):
 def readPheno(file):
   phenoDict = {}  # initialize
   totalCol=0 #initialize count of columns so we know what is new column to add proxycase assignment
+  count=0 
   f = open(file, "r")
-  next(f)  # skip header
   for line in f:
     line = line.rstrip()
-    line_list = line.split("\t")
-    phenoDict[line_list[0]] = line_list
-    totalCol=len(line_list)
-  return phenoDict, totalCol
+    if count==0:
+      header=line #save header
+      count+=1
+    else:
+      line_list = line.split("\t")
+      phenoDict[line_list[0]] = line_list
+      totalCol=len(line_list)
+  return phenoDict, totalCol, header
 
 #Perform proxy case assignment using information on case/control status of the sample and the kinship matrix with the rest of samples in the study 
 def proxy_via_kinship(pd, kd, cc, tc, cp):
@@ -244,6 +249,32 @@ def search_nested_dict(dict,key):
           found.append(masterKey)
   return found
 
+#print model 1 (standard gwas) phenotype file based on --pheno but consistent with proxyModel.py output
+def model1_print(header,cp,pd,name):
+  #delete output file if it exists because we are appending
+  try:
+    os.remove(name)
+  except OSError:
+    pass
+  f1 = open(name, 'a')
+
+  header[cp]="F" #replace header label with F
+
+  print >> f1, header
+
+  #convert 2 to 1 (case), 1 to 0 (control), and NA/3 to NA (missing/unknown/NA)
+  for sample in pd:
+    if pd[sample][cp] == '2':  # if case
+      pd[sample][cp]="1" #set as case
+    elif pd[sample][cp] == '1':  # if control
+      pd[sample][cp]="0" #set as control
+    else: #if missing or NA
+      pd[sample][cp]="NA" #set as missing
+    #print line
+    print pd[sample] 
+
+ f1.close() #close file
+
 #########################
 ########## MAIN #########
 #########################
@@ -257,7 +288,7 @@ def main():
     args.number = None
 
   #always read phenotype file with self report information
-  phenoDict, totalCol = readPheno(args.pheno)
+  phenoDict, totalCol, header = readPheno(args.pheno)
   print >> sys.stderr, "Finished reading phenotype file %s\n" % args.pheno
 
   if (args.number is not None) or args.proxy=="SMK" or args.proxy=="SPK" or args.proxy=="A" or args.proxy=="K": #only read kinship file into memory if you have to
@@ -270,7 +301,10 @@ def main():
   cp=args.columnPhenotype
   cr=args.columnRelative
 
-
+  # create model 1 (standard gwas) phenotype file
+  model1_print(header,cp,phenoDict,args.model1)
+  print >> sys.stderr, "Finished printing model 1 phenotype file %s\n" % args.model1
+  
   ########### Self report minus kinship ################
   if args.proxy == "SMK":  # self report minus kinship
     print >> sys.stderr, "Assigning proxy-cases based on self report (-x SMK)"
