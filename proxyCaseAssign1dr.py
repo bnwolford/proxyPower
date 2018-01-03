@@ -58,6 +58,7 @@ def get_settings():
 ######### FUNCTIONS ########
 ############################
 
+#these numbers are from http://people.virginia.edu/~wc9c/KING/manual.html
 def is_first_degree_relative(kinship):
   return (float(kinship) >= 0.177 and float(kinship) <= 0.354)
 
@@ -273,7 +274,9 @@ def model1_print(header,cp,pd,name):
     #print line
     print pd[sample] 
 
- f1.close() #close file
+  f1.close() #close file
+  return
+
 
 #########################
 ########## MAIN #########
@@ -336,7 +339,7 @@ def main():
 
     if args.number is not None:
       count_relatives(args.number,kinDict,phenoDict_SR, totalCol)
-       print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases\n"
+      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases\n"
 
     if args.output == "B":
       BOLT_print(phenoDict_SR, totalCol)
