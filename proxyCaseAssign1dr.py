@@ -259,9 +259,10 @@ def model1_print(header,cp,pd,name):
     pass
   f1 = open(name, 'a')
 
-  header[cp]="F" #replace header label with F
-
-  print >> f1, header
+  header_list = header.split("\t")
+  header_list[cp]="F" #replace header label with F
+  
+  print >> f1, "\t".join(header_list)
 
   #convert 2 to 1 (case), 1 to 0 (control), and NA/3 to NA (missing/unknown/NA)
   for sample in pd:
@@ -272,7 +273,7 @@ def model1_print(header,cp,pd,name):
     else: #if missing or NA
       pd[sample][cp]="NA" #set as missing
     #print line
-    print pd[sample] 
+    print >> f1, "\t".join(pd[sample])
 
   f1.close() #close file
   return
