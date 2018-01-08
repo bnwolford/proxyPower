@@ -261,7 +261,7 @@ def model1_print(header,cp,pd,name):
   f1 = open(name, 'a')
 
   header_list=header.split("\t")
-  header[cp]="F" #replace header label with F
+  header_list[cp]="F" #replace header label with F
 
   print >> f1, "\t".join(header_list)
 
