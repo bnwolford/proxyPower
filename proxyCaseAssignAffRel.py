@@ -39,8 +39,7 @@ import copy
 ##### PARSE ARGUMENTS ####
 ###########################
 def get_settings():
-  parser = argparse.ArgumentParser(
-    description='''Script to perform proxy-case assignment using kinship matrix from KING2, self reported affected relative status of mother, father, sibling, and case/control status from EHR derived phenotypes. The default is an output of the phenotype file with an additional column holding the proxy-case assignment.''')
+  parser = argparse.ArgumentParser(description='''Script to perform proxy-case assignment using kinship matrix from KING2, self reported affected relative status of mother, father, sibling, and case/control status from EHR derived phenotypes. The default is an output of the phenotype file with an additional column holding the proxy-case assignment.''')
   parser.add_argument("-k", "--kinship", help="Kinship from KING2 and requires header", type=str)
   parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be IID. Header expected",type=str,required=True)
   parser.add_argument("-cm","--columnMother",help="0-based column number for affected mother. Expects 1 if mother is affected and 0 otherwise.", type=int,required=True)
@@ -51,7 +50,7 @@ def get_settings():
   parser.add_argument("-cc", "--conservControl", help="Requires conservative control (unknown or missing on self report questions are not allowed to be controls), less stringent control is default",action="store_true")
   parser.add_argument("-x", "--proxy",help="Type of logic used to identify proxy-cases [all=A, kinship only=K, self report only=SR, self report minus kinship=SMK, self report plus kinship=SPK]",type=str,required=True)
   parser.add_argument("-n","--number",help="Name of file in which to print number of cases/proxy-cases every sample is related to. If file is not provided then this functionality will not happen.",type=str)
-    parser.add_argument("-m","--model1",help="Name of file in which to print model 1 (standard GWAS) phenotype file. This file will be similar to --pheno input file, but header for phenotype column will be F and values will be 1 for case, 0 for control, NA for missing for consistency with proxyModel.py phenotype files\n",type=str,required=True)
+  parser.add_argument("-m","--model1",help="Name of file in which to print model 1 (standard GWAS) phenotype file. This file will be similar to --pheno input file, but header for phenotype column will be F and values will be 1 for case, 0 for control, NA for missing for consistency with proxyModel.py phenotype files\n",type=str,required=True)
   args = parser.parse_args()
   return args
 
