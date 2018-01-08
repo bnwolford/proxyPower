@@ -41,7 +41,7 @@ import copy
 def get_settings():
   parser = argparse.ArgumentParser(description='''Script to perform proxy-case assignment using kinship matrix from KING2, self reported affected relative status of mother, father, sibling, and case/control status from EHR derived phenotypes. The default is an output of the phenotype file with an additional column holding the proxy-case assignment.''')
   parser.add_argument("-k", "--kinship", help="Kinship from KING2 and requires header", type=str)
-  parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be IID. Header expected",type=str,required=True)
+  parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be an ID specific to the individual sample (e.g. IID). Header expected",type=str,required=True)
   parser.add_argument("-cm","--columnMother",help="0-based column number for affected mother. Expects 1 if mother is affected and 0 otherwise.", type=int,required=True)
   parser.add_argument("-cf","--columnFather",help="0-based column number for affected father. Expects 1 if father is affected and 0 otherwise.", type=int,required=True)
   parser.add_argument("-cs","--columnSibling",help="0-based column number for affected sibling. Expects 1 if sibling is affected and 0 otherwise.", type=int,required=True)
