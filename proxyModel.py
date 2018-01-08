@@ -86,13 +86,16 @@ def updateF(phenoDict,col,model,output,header):
 
   print >> f1, header
 
+
+
   for line in phenoDict.keys(): #loop through every line in phenotype file
     
     zc=col #0-based column for F
     f=str(phenoDict[line][zc]) #save F value as string
 
     if model == 1: #standard GWAS
-      print >> sys.stderr("Model 1 is Standard GWAS and a phenotype file for this analysis is created by proxyCaseAssign1dr.py or proxyCaseAssignAffRel.py based on the phenotype files provided there.\n")
+      print >> sys.stderr, "Model 1 is Standard GWAS and a phenotype file for this analysis is created by proxyCaseAssign1dr.py or proxyCaseAssignAffRel.py based on the phenotype files provided there.\n"
+      break
 
     elif model == 2: #GWAS with cleaner controls
       if f=="0.25":
