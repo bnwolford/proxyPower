@@ -323,6 +323,9 @@ def main():
     elif args.output == "P":
       print >> sys.stderr, "This functionality not available yet\n"
     else:
+      header_list=header.split("\t")
+      header_list.append("F") #add new column label to header
+      print "\t".join(header_list)
       for sample in phenoDict_SRMK:
         print "\t".join(phenoDict_SRMK[sample])
     print >> sys.stderr, "Finished printing results\n"
@@ -343,6 +346,9 @@ def main():
     elif args.output == "P":
       print >> sys.stderr, "This functionality not available yet\n"
     else:
+      header_list=header.split("\t")
+      header_list.append("F") #add new column label to header
+      print "\t".join(header_list)
       for sample in phenoDict_SR:
         print "\t".join(phenoDict_SR[sample])
     print >> sys.stderr, "Finished printing results\n"
@@ -365,6 +371,9 @@ def main():
     elif args.output == "P" or args.output == "S":
       print >> sys.stderr, "This functionality not available yet\n"
     else:
+      header_list=header.split("\t")
+      header_list.append("F") #add new column label to header
+      print "\t".join(header_list)
       for sample in phenoDict_SRPK:
         print "\t".join(phenoDict_SRPK[sample])
     print >> sys.stderr, "Finished printing results\n"
@@ -385,6 +394,9 @@ def main():
     elif args.output == "P":
       print >> sys.stderr, "This functionality not available yet\n"
     else:
+      header_list=header.split("\t")
+      header_list.append("F") #add new column label to header
+      print "\t".join(header_list)
       for sample in phenoDict_K:
         print "\t".join(phenoDict_K[sample])
     print >> sys.stderr, "Finished printing results\n"
