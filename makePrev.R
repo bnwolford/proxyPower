@@ -119,6 +119,9 @@ dev.off()
 prev$MaleSmooth<-predict(loess(Male~Age,prev),prev$Age)
 prev$FemaleSmooth<-predict(loess(Female~Age,prev),prev$Age)
 
+#rename to match makeLiability.R
+names(prev)<-c("AGE", "K_MALE", "K_FEMALE", "K_MALE_SMOOTH","K_FEMALE_SMOOTH")
+
 #write out file
 dat_name<-paste(sep=".",out,"tab")
 write.table(prev,append=FALSE, quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, file=dat_name)
