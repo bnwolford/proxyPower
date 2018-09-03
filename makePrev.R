@@ -120,10 +120,18 @@ prev$MaleSmooth<-predict(loess(Male~Age,prev),prev$Age)
 prev$FemaleSmooth<-predict(loess(Female~Age,prev),prev$Age)
 
 #restrain predictions to (0,1) boundaries
-prev[prev$MaleSmooth<0,]<-0
-prev[prev$MaleSmooth>1,]<-1
-prev[prev$FemaleSmooth<0,]<-0
-prev[prev$FemaleSmooth>1,]<-1
+if (min(prev$MaleSmooth)<0){
+   prev[prev$MaleSmooth<0,]$MaleSmooth<-0
+}
+if (max(prev$MaleSmooth>1)){
+   prev[prev$MaleSmooth>1,]$MaleSmooth<-1
+}
+if (min(prev$FemaleSmooth)<0){
+   prev[prev$FemaleSmooth<0,]$FemaleSmooth<-0
+}
+if (max(prev$FemaleSmooth>1)){
+   prev[prev$FemaleSmooth>1,]$FemaleSmooth<-1
+}
 
 #rename to match makeLiability.R
 names(prev)<-c("AGE", "K_MALE", "K_FEMALE", "K_MALE_SMOOTH","K_FEMALE_SMOOTH")
