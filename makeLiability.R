@@ -1,6 +1,6 @@
 #!/usr/bin/Rscript
 
-Revised from make_liabs.R script by Jimmy Liu (https://github.com/jimmyzliu/pmliability)
+#Revised from make_liabs.R script by Jimmy Liu (https://github.com/jimmyzliu/pmliability)
 
 #===============================================================================
 # Copyright (c) 2018 Brooke Wolford
@@ -29,30 +29,20 @@ Revised from make_liabs.R script by Jimmy Liu (https://github.com/jimmyzliu/pmli
 ################### Read Command Line Parameters #############################
 suppressPackageStartupMessages(library(optparse))
 optionList <- list(
-    make_option(c("-h", "--heritability"), type="numeric", help="Estimated eritability of the trait"),
+    make_option(c("-t", "--heritability"), type="numeric", help="Estimated eritability of the trait"),
     make_option(c("-v","--prevalence"), type="character", help="File with prevalence by age and sex"),
     make_option(c("-p","--ped"),type="character",help=".ped file"),
     make_option(c("-o","--output"),type="character",help="Output file name")
 	        )
 
 parser <- OptionParser(
-    usage="%prog -f file -a alpha",
+    usage="%prog -t heritability -v prevalence -p ped_file -o output", add_help_option=TRUE,
         option_list=optionList
 	    )
 
-# a hack to fix a bug in optparse that won't let you use positional args
-# if you also have non-boolean optional args:
-getOptionStrings <- function(parserrObj){
-optionStrings <- character()
-        for(item in   parserObj@options) {
-	        optionStrings <- append(optionStrings, c(item@short_flag, item@long_flag))
-		} 
-		optionStrings
-		}
-
-optStrings <- getOptionStrings(parser)
-arguments <- parse_args(parser, positional_arguments=TRUE)
-
+args <- parse_args(parser, positional_arguments = 0)
+opt <- args$options
+print(opt)
 
 ########################### Load functions and libraries ###################################################
 
@@ -62,13 +52,15 @@ library(data.table)
 
 ############################ Main Commands ##################################################
 
+h2 <- opt$heritability
+pedigree <-opt$ped
+prev<- opt$prevalence
+out <- opt$output
 
-
-h2 <- arguments$options$heritability
-pedigree <-arguments$options$ped
-prev <-arguments$options$prevalence
-out <- arguments$options$output
-
+#check for required arguments
+if (is.null(h2) | is.null(pedigree) | is.null(prev) | is.null(out)) {
+   stop("Missing  argument!\n")
+}
 
 prev <- fread(prev,header=T)
 ped <- fread(pedigree,header=T)
@@ -108,9 +100,8 @@ for(fam in fams){
     ids <- fam_ped$id
 
     #if(NA %in% fam_info$PHENO){
-                                        #next
-    
-                                        #}
+     #next
+     #}
     prevs <- rep(0,length(ids))
 
     #upper
