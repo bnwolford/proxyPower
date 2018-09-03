@@ -44,12 +44,30 @@ args <- parse_args(parser, positional_arguments = 0)
 opt <- args$options
 print(opt)
 
-########################### Load functions and libraries ###################################################
+########################### Libraries ###################################################
 
 library(ggplot2)
 library(tmvtnorm)
 library(kinship2)
 library(data.table)
+
+########################### Functions ################################
+
+#if age from .ped is an outlier and not present in prevalence file, add a year until a prevalence is available or until max age is reached 
+#if age is missing use median proband age 
+assign_age<-function(fam_info,i,prev,med_age){
+	age <- fam_info$AGE[i]
+	if(is.na(age)){ age <- med_age }
+	repeat{
+		if (age>max(prev$AGE)){
+		   break
+		} else if (nrow(prev[prev$AGE==age])==1){
+		   break
+		}
+		age <- age + 1
+	   }
+	 return(age)
+}
 
 ############################ Main Commands ##################################################
 
@@ -84,6 +102,8 @@ big_ped <- pedigree(id = ped$IID,
                     famid = ped$FID,
                     affected = ped$PHENO)
 
+#calculate median age of probands
+med_age<-median(ped[ped[,lapply(.SD,function(x) x %like% "PROBAND")]$IID,]$AGE)
 
 liab_pheno <- data.frame()
 for(fam in fams){
@@ -109,10 +129,8 @@ for(fam in fams){
     l_upper <- rep(0,nrow(fam_info))
     l_lower <- rep(0,nrow(fam_info))
     for(i in 1:nrow(fam_info)){
-        age <- fam_info$AGE[i]
-        # ugh. missing age. fudge for now
-        if(is.na(age)){ age <- 50}
-        sex <- fam_info$SEX[i]
+    	age <- assign_age(fam_info,i,prev,med_age) #deal with corner cases regarding missing or outlier age in pedigree
+	sex <- fam_info$SEX[i]
         pheno <- fam_info$PHENO[i]
         # if missing phenotypes in family, exclude. fix later
         if(age < min(prev$AGE)){ age <- min(prev$AGE)}
@@ -120,6 +138,7 @@ for(fam in fams){
         k <- sum(prev[prev$AGE == age,c(2,3)])/2 #average male and female prevalence
         if(sex == "male"){ k <- as.numeric(prev[prev$AGE == age,4])} #male smooth prevalence
         if(sex == "female"){ k <- as.numeric(prev[prev$AGE == age,5])} #female smooth prevalence
+
 	#k cannot be negative
         t <- qnorm(1-k)
         if(is.na(pheno)){
