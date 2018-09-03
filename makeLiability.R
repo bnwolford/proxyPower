@@ -46,6 +46,7 @@ print(opt)
 
 ########################### Load functions and libraries ###################################################
 
+library(ggplot2)
 library(tmvtnorm)
 library(kinship2)
 library(data.table)
@@ -116,26 +117,27 @@ for(fam in fams){
         # if missing phenotypes in family, exclude. fix later
         if(age < min(prev$AGE)){ age <- min(prev$AGE)}
         if(age > max(prev$AGE)){ age <- max(prev$AGE)}
-        k <- sum(prev[prev$AGE == age,c(2,3)])/2
-        if(sex == "male"){ k <- prev[prev$AGE == age,4]}
-        if(sex == "female"){ k <- prev[prev$AGE == age,5]}
+        k <- sum(prev[prev$AGE == age,c(2,3)])/2 #average male and female prevalence
+        if(sex == "male"){ k <- as.numeric(prev[prev$AGE == age,4])} #male smooth prevalence
+        if(sex == "female"){ k <- as.numeric(prev[prev$AGE == age,5])} #female smooth prevalence
+	#k cannot be negative
         t <- qnorm(1-k)
         if(is.na(pheno)){
             l_upper[i] <- Inf
             l_lower[i] <- -Inf
         }
         else{
-            if(pheno == 1){
+            if(pheno == 1){ #case
                 l_upper[i] <- Inf
                 l_lower[i] <- t
                 if(k == 0){
-                    all_prev <- c(prev[,2],prev[,3])
+                    all_prev <- unlist(c(prev[,2],prev[,3]))
                     min_k <- min(all_prev[all_prev!=0])
                     t <- qnorm(1-min_k)
                     l_lower[i] <- t
                 }
             }
-            if(pheno == 0){
+            if(pheno == 0){ #control
                 l_upper[i] <- t
                 l_lower[i] <- -Inf
             }
@@ -154,4 +156,14 @@ for(fam in fams){
     if(nrow(liab_pheno) %% 500 == 0){ print(nrow(liab_pheno))}
 }
 
-write.table(liab_pheno,paste("liab_files/",trait,".liab",sep=""),col.names=F,row.names=F,quote=F)
+
+#write table of results
+file<-paste0(out,".liab")
+write.table(liab_pheno,file,col.names=F,row.names=F,quote=F)
+
+#make plot
+pdf<-paste0(out,".pdf")
+pdf(file=pdf,height=3,width=3)
+#ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability") + geom_density()
+ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability",y="Frequency") + geom_histogram(binwidth=0.01)
+dev.off()
