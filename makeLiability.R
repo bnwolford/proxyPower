@@ -97,12 +97,12 @@ ped$SEX[which(ped$SEX == "2")] <- "female"
 ped$SEX[which(ped$SEX == "1")] <- "male"
 
 #must have both mom and dad in ped
-big_ped <- pedigree(id = ped$IID,
-                    dadid = ped$FATHER,
-                    momid = ped$MOTHER,
-                    sex = ped$SEX,
-                    famid = ped$FID,
-                    affected = ped$PHENO)
+#big_ped <- pedigree(id = ped$IID,
+ #                   dadid = ped$FATHER,
+  #                  momid = ped$MOTHER,
+   #                 sex = ped$SEX,
+    #                famid = ped$FID,
+     #               affected = ped$PHENO)
 
 #calculate median age of probands
 med_age<-median(ped[ped[,lapply(.SD,function(x) x %like% "PROBAND")]$IID,]$AGE)
@@ -110,7 +110,7 @@ med_age<-median(ped[ped[,lapply(.SD,function(x) x %like% "PROBAND")]$IID,]$AGE)
 liab_pheno <- data.frame()
 for(fam in fams){
     fam_info <- ped[ped$FID == fam,]
-    fam_ped <- pedigree(id = fam_info$IID,
+    fam_ped <- pedigree(id = fam_info$IID, #create pedigree structure for each family
                         dadid = fam_info$FATHER,
                         momid = fam_info$MOTHER,
                         sex = fam_info$SEX,
@@ -174,7 +174,7 @@ for(fam in fams){
                      thinning = 5)
     liab <- colSums(liab)/1000
     liab_pheno <- rbind(liab_pheno,data.frame(ids,liab))
-    if(nrow(liab_pheno) %% 500 == 0){ print(nrow(liab_pheno))}
+    if(nrow(liab_pheno) %% 500 == 0){ print(nrow(liab_pheno))} #print line number every 500 lines to show progress
 }
 
 
@@ -189,7 +189,7 @@ pdf(file=pdf,height=3,width=3)
 ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability",y="Frequency") + geom_histogram(binwidth=0.01)
 dev.off()
 
-#add liability of probands back to phenotype file
+#add liability of probands back to phenotype file if option is given
 if (!is.null(pheno)) {
     p<-fread(pheno,header=T) #read in phenotype file
     probands<-liab_pheno[grepl('PROBAND',liab_pheno$ids),] #subset to probands only
