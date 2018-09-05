@@ -76,7 +76,7 @@ h2 <- opt$heritability
 pedigree <-opt$ped
 prev<- opt$prevalence
 out <- opt$output
-pheno <-opt$phenoFile
+phenoFile <-opt$phenoFile
 
 #check for required arguments
 if (is.null(h2) | is.null(pedigree) | is.null(prev) | is.null(out)) {
@@ -117,7 +117,7 @@ for(fam in fams){
                         famid = fam_info$FID,
                         affected = fam_info$PHENO)
     #fam_ped <- big_ped[fam]
-    sigma <- 2*kinship(fam_ped)
+    sigma <- 2*kinship(fam_ped) #computes kinship matrix from family pedigree
     sigma <- h2 * sigma
     diag(sigma) <- rep(1,nrow(sigma))
     ids <- fam_ped$id
@@ -190,8 +190,8 @@ ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability",
 dev.off()
 
 #add liability of probands back to phenotype file if option is given
-if (!is.null(pheno)) {
-    p<-fread(pheno,header=T) #read in phenotype file
+if (!is.null(phenoFile)) {
+    p<-fread(phenoFile,header=T) #read in phenotype file
     probands<-liab_pheno[grepl('PROBAND',liab_pheno$ids),] #subset to probands only
     probands$new_id<-gsub('_PROBAND',"",probands$ids)
     tmp<-left_join(p,probands,by=c("IID"="new_id")) #join the calculated liabilities to the phenotype file
