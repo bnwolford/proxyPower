@@ -32,7 +32,8 @@ optionList <- list(
     make_option(c("-t", "--heritability"), type="numeric", help="Estimated eritability of the trait"),
     make_option(c("-v","--prevalence"), type="character", help="File with prevalence by age and sex"),
     make_option(c("-p","--ped"),type="character",help=".ped file"),
-    make_option(c("-o","--output"),type="character",help="Output file name")
+    make_option(c("-o","--output"),type="character",help="Output file name"),
+    make_option(c("-f","--phenoFile"),type="character",help="Phenotype file. If present, will add liabilities as a new column matching on IID")
 	        )
 
 parser <- OptionParser(
@@ -75,6 +76,7 @@ h2 <- opt$heritability
 pedigree <-opt$ped
 prev<- opt$prevalence
 out <- opt$output
+pheno <-opt$phenoFile
 
 #check for required arguments
 if (is.null(h2) | is.null(pedigree) | is.null(prev) | is.null(out)) {
@@ -181,8 +183,19 @@ file<-paste0(out,".liab")
 write.table(liab_pheno,file,col.names=F,row.names=F,quote=F)
 
 #make plot
-pdf<-paste0(out,".pdf")
+pdf<-paste0(out,".liab.pdf")
 pdf(file=pdf,height=3,width=3)
 #ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability") + geom_density()
 ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability",y="Frequency") + geom_histogram(binwidth=0.01)
 dev.off()
+
+#add liability of probands back to phenotype file
+if (!is.null(pheno)) {
+    p<-fread(pheno,header=T) #read in phenotype file
+    probands<-liab_pheno[grepl('PROBAND',liab_pheno$ids),] #subset to probands only
+    probands$new_id<-gsub('_PROBAND',"",probands$ids)
+    tmp<-left_join(p,probands,by=c("IID"="new_id")) #join the calculated liabilities to the phenotype file
+    new_p<-tmp[,!names(tmp) %in% c("ids")]
+    file<-paste0(out,"liab.phenoFile")
+    write.table(new_p,file,col.names=t, row.names=F, quote=F)
+}
