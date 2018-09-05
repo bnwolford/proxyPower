@@ -51,6 +51,7 @@ library(ggplot2)
 library(tmvtnorm)
 library(kinship2)
 library(data.table)
+library(dplyr)
 
 ########################### Functions ################################
 
@@ -185,8 +186,9 @@ write.table(liab_pheno,file,col.names=F,row.names=F,quote=F)
 #make plot
 pdf<-paste0(out,".liab.pdf")
 pdf(file=pdf,height=3,width=3)
+title=paste(sep=" ",out,"Liabilities")
 #ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability") + geom_density()
-ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability",y="Frequency") + geom_histogram(binwidth=0.01)
+ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability",y="Frequency",title=title) + geom_histogram(binwidth=0.01)
 dev.off()
 
 #add liability of probands back to phenotype file if option is given
@@ -196,6 +198,16 @@ if (!is.null(phenoFile)) {
     probands$new_id<-gsub('_PROBAND',"",probands$ids)
     tmp<-left_join(p,probands,by=c("IID"="new_id")) #join the calculated liabilities to the phenotype file
     new_p<-tmp[,!names(tmp) %in% c("ids")]
-    file<-paste0(out,"liab.phenoFile")
-    write.table(new_p,file,col.names=t, row.names=F, quote=F)
+
+    ##write file
+    file<-paste0(out,".liab.phenoFile")
+    write.table(new_p,file,col.names=T, row.names=F, quote=F,sep="\t")
+
+    ## plot just the proband liabilities 
+    pdf<-paste0(file,".pdf")
+    pdf(file=pdf,height=3,width=3)
+    title=paste(sep=" ",out,"Proband Liabilities")
+    ggplot(new_p,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability",y="Frequency",title=title) + geom_histogram(binwidth=0.01)
+    dev.off()
+    
 }
