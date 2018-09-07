@@ -24,13 +24,13 @@ Scripts made available here are useful for:
 In order to download proxyPower you shoudl clone this repository.
   git clone https:://github.com/bnwolford/proxyPower.git
   cd proxyPower
-  
-## Tutorial
  
 ## Support
  
- Issues with proxyPower? Email bwolford@umich.edu. 
+ - [Tutorial](https://github.com/bnwolford/proxyPower/wiki/Tutorial)
+ - Issues with proxyPower? Email bwolford@umich.edu. 
  
 ## License
  
+This project is licensed under the terms of the MIT license.
 
