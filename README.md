@@ -21,9 +21,10 @@ Scripts made available here are useful for:
 
 ## Getting Started
 
-In order to download proxyPower you shoudl clone this repository.
-  git clone https:://github.com/bnwolford/proxyPower.git
-  cd proxyPower
+In order to download proxyPower you should clone this repository.
+
+    git clone https:://github.com/bnwolford/proxyPower.git
+    cd proxyPower
  
 ## Support
  
