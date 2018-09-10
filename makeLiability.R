@@ -196,8 +196,8 @@ file<-paste0(out,".liab")
 write.table(liab_pheno,file,col.names=F,row.names=F,quote=F)
 
 #make plot
-pdf<-paste0(out,".liab.pdf")
-pdf(file=pdf,height=3,width=3)
+pdf_name<-paste0(out,".liab.pdf")
+pdf(file=pdf_name,height=3,width=3)
 title=paste(sep=" ",out,"Liabilities")
 #ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability") + geom_density()
 ggplot(liab_pheno,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability",y="Frequency",title=title) + geom_histogram(binwidth=0.01)
@@ -214,11 +214,11 @@ if (!is.null(phenoFile)) {
     ##write file
     file<-paste0(out,".liab.phenoFile")
     write.table(new_p,file,col.names=T, row.names=F, quote=F,sep="\t")
-
+    
     ## plot just the proband liabilities 
-    pdf<-paste0(file,".pdf")
-    pdf(file=pdf,height=3,width=3)
-    title=paste(sep=" ",out,"Proband Liabilities")
+    pdf_name<-paste0(file,".pdf")
+    pdf(file=pdf_name,height=3,width=3)
+    title=paste(sep=" ",out,"Proband Liabilities"))
     ggplot(new_p,aes(x=liab)) + theme_bw() + labs(x="Posterior mean liability",y="Frequency",title=title) + geom_histogram(binwidth=0.01)
     dev.off()
     
