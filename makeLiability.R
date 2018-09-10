@@ -48,10 +48,12 @@ print(opt)
 ########################### Libraries ###################################################
 
 library(ggplot2)
-library(tmvtnorm)
-library(kinship2)
+library(tmvtnorm) #https://cran.r-project.org/web/packages/tmvtnorm/tmvtnorm.pdf
+library(kinship2)  #https://cran.r-project.org/web/packages/kinship2/kinship2.pdf
 library(data.table)
 library(dplyr)
+library(GENESIS) #bioconductor package to turn king2 output into matrix
+library(Matrix)
 
 ########################### Functions ################################
 
@@ -70,6 +72,16 @@ assign_age<-function(fam_info,i,prev,med_age){
 	   }
 	 return(age)
 }
+
+
+read_matrix<-function(mat){
+    m<-king2mat(mat,type="kinship") #convert KING2 to m
+    #sm<-as(m,'sparseMatrix') #make dgCMatrix
+    sm<-Matrix(m,sparse=TRUE) #make dsCmatrix
+                                        #maybe can make faster with Rcpp http <- //gallery.rcpp.org/articles/sparse-matrix-coercion/
+    
+    }
+
 
 ############################ Main Commands ##################################################
 
@@ -93,7 +105,7 @@ ped$FATHER[which(is.na(ped$FATHER))] <- ""
 ped$MOTHER[which(is.na(ped$MOTHER))] <- ""
 
 # change sex to: 1 == male, 2 == female, 3 == unknown
-ped$SEX[which(is.na(ped$SEX))] <- "unknown"
+ped$SEX[which(is.na(ped$SEX))] <- "unknown" #could also be -9?
 ped$SEX[which(ped$SEX == "2")] <- "female"
 ped$SEX[which(ped$SEX == "1")] <- "male"
 
@@ -118,9 +130,9 @@ for(fam in fams){
                         famid = fam_info$FID,
                         affected = fam_info$PHENO)
     #fam_ped <- big_ped[fam]
-    sigma <- 2*kinship(fam_ped) #computes kinship matrix from family pedigree
-    sigma <- h2 * sigma
-    diag(sigma) <- rep(1,nrow(sigma))
+    sigma <- 2*kinship(fam_ped) #matrix of kinship coefficients from family pedigree x 2 = coefficient of relationship/genetic relatedness
+    sigma <- h2 * sigma #sigma is dsCMatrix
+    diag(sigma) <- rep(1,nrow(sigma)) #diaganol is 1 
     ids <- fam_ped$id
 
     #if(NA %in% fam_info$PHENO){
@@ -172,8 +184,8 @@ for(fam in fams){
                      upper = l_upper,
                      algorithm = "gibbs",
                      burn.in.samples = 100,
-                     thinning = 5)
-    liab <- colSums(liab)/1000
+                     thinning = 5) #decide optimal thinnign with autocorrelation plots
+    liab <- colSums(liab)/1000 
     liab_pheno <- rbind(liab_pheno,data.frame(ids,liab))
     if(nrow(liab_pheno) %% 500 == 0){ print(nrow(liab_pheno))} #print line number every 500 lines to show progress
 }
