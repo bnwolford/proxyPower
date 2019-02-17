@@ -40,7 +40,8 @@ import copy
 ###########################
 def get_settings():
   parser = argparse.ArgumentParser(description='''Script to perform proxy-case assignment using kinship matrix from KING2, self reported affected relative status of mother, father, sibling, and case/control status from EHR derived phenotypes. The default is an output of the phenotype file with an additional column holding the proxy-case assignment.''')
-  parser.add_argument("-k", "--kinship", help="Kinship from KING2 and requires header", type=str)
+  parser.add_argument("-k", "--kinship", help="Kinship from KING2 and requires header. Assumes FID1, ID1, FID2, ID2 and additional columns may vary.", type=str)
+  parser.add_argument("-ck","--columnKin",help="0-based column number with Kinship value from KING.",default=8,type=int)
   parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be an ID specific to the individual sample (e.g. IID). Header expected",type=str,required=True)
   parser.add_argument("-cm","--columnMother",help="0-based column number for affected mother. Expects 1 if mother is affected and 0 otherwise.", type=int,required=True)
   parser.add_argument("-cf","--columnFather",help="0-based column number for affected father. Expects 1 if father is affected and 0 otherwise.", type=int,required=True)
@@ -59,22 +60,37 @@ def get_settings():
 ######### FUNCTIONS ########
 ############################
 
+def openFile(filename):
+  if ".gz" in filename:
+    command=gzip.open(filename,"rt")
+    print >> sys.stderr, "Opening zipped file\n"
+  elif ".gz" not in filename:
+    command=open(filename,"rt")
+    print >> sys.stderr, "Opening unzipped file\n"
+  return command
+
+
 #these numbers are from http://people.virginia.edu/~wc9c/KING/manual.html
 def is_first_degree_relative(kinship):
   return (float(kinship) >= 0.177 and float(kinship) <= 0.354)
 
 
 # read kinship file, assumes FID and IID are equal because no family info
-def readKinship(file):
+def readKinship(file,col):
   kinDict = {}  # intialize
-  f = open(file, "r")
-  next(f)  # skip header
-  for line in f:
-    line = line.rstrip()
-    (FID1, IID1, FID2, IID2, NSNP, HETHET, IBS0, KinVal) = line.split("\t")
-    if IID1 not in kinDict.keys():
-      kinDict[IID1] = {}  # initalize
-    kinDict[IID1][IID2] = KinVal
+  openCommand=openFile(file) #handle zipped file
+  with openCommand as f:
+    next(f)  # skip header
+    for line in f:
+      line = line.rstrip()
+      lineList = line.split("\t")
+      IID1=lineList[1]
+      IID2=lineList[3]
+      KinVal=lineList[col]
+      if IID1 not in kinDict.keys():
+        kinDict[IID1] = {}  # initalize
+        kinDict[IID1][IID2] = KinVal
+  f.close()
   return kinDict
 
 #read phenotype file with case/control information for sample and affected status of relatives
@@ -290,7 +306,7 @@ def main():
   print >> sys.stderr, "Finished reading phenotype file %s\n" % args.pheno
   
   if (args.number is not None) or args.proxy=="SMK" or args.proxy=="SPK" or args.proxy=="A" or args.proxy=="K": #only read kinship file into memory if you have to
-    kinDict = readKinship(args.kinship)  # read kinship file
+    kinDict = readKinship(args.kinship,args.columnKin)  # read kinship file
     print >> sys.stderr, "Finished reading kinship file %s\n" %args.kinship
 
   # print kinDict
