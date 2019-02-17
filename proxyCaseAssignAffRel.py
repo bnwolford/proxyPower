@@ -33,7 +33,7 @@ import argparse
 from itertools import islice
 import gzip, re, os, math, sys
 import copy
-
+import datetime
 
 ###########################
 ##### PARSE ARGUMENTS ####
@@ -59,6 +59,7 @@ def get_settings():
 ############################
 ######### FUNCTIONS ########
 ############################
+
 
 #open file taking zipped or unzipped into account
 def openFile(filename):
@@ -169,7 +170,11 @@ def proxy_via_selfreport(pd, cc, cp, cm, cf, cs):
           pd_sr[sample].append("0") #set as control if conservative control option not invoked
     
     else: #if missing or NA for case
-      pd_sr[sample].append("NA") #missing
+
+      if pd[sample][cm] == '1' or pd[sample][cf] == "1" or pd[sample][cs] == "1" :  # if have an affected first degree relative
+        pd_sr[sample].append("0.5")  # set as proxy-case, could be case but is at least known proxy case
+      else:  
+        pd_sr[sample].append("NA") #missing
       #sys.stderr.write("Sample %s is neither case (1) nor control (0)\n." % sample)
       
   return pd_sr
@@ -306,7 +311,7 @@ def main():
   #always read phenotype file
   phenoDict, totalCol, header = readPheno(args.pheno)  # read self report file
 
-  print >> sys.stderr, "Finished reading phenotype file %s\n" % args.pheno
+  print >> sys.stderr, "Finished reading phenotype file %s at %s\n" % (args.pheno, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
   
   if (args.number is not None) or args.proxy=="SMK" or args.proxy=="SPK" or args.proxy=="A" or args.proxy=="K": #only read kinship file into memory if you have to
     kinDict = readKinship(args.kinship,args.columnKin)  # read kinship file
@@ -322,20 +327,20 @@ def main():
 
   # create model 1 (standard gwas) phenotype file
   model1_print(header,cp,phenoDict,args.model1)
-  print >> sys.stderr, "Finished printing model 1 phenotype file %s\n" % args.model1
+  print >> sys.stderr, "Finished printing model 1 (e.g. standard GWAS) phenotype file %s at %s. For more models please use proxyModel.py\n" % (args.model1, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
   ########### Self report minus kinship ################
   if args.proxy == "SMK":  # self report minus kinship
-    print >> sys.stderr, "Assigning proxy-cases based on self report (-x SMK)"
+    print >> sys.stderr, "Assigning proxy-cases based on self report (-x SMK) at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cm, cf, cs)  # self report
-    print >> sys.stderr, "Finished assigning proxy-cases based on self report\n"
+    print >> sys.stderr, "Finished assigning proxy-cases based on self report at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     phenoDict_SRMK = proxy_via_selfreport_minus_kinship(phenoDict_SR, kinDict, totalCol)  # self report minus kinship
-    print >> sys.stderr, "Finished refining proxy-case assignment based on kinship\n"
+    print >> sys.stderr, "Finished refining proxy-case assignment based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     if args.number is not None:
       count_relatives(args.number,kinDict,phenoDict_SRMK,totalCol)
-      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases\n"
+      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s \n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     if args.output == "B":
       BOLT_print(phenoDict_SRMK,totalCol)
@@ -347,18 +352,18 @@ def main():
       print "\t".join(header_list)
       for sample in phenoDict_SRMK:
         print "\t".join(phenoDict_SRMK[sample])
-    print >> sys.stderr, "Finished printing results\n"
+    print >> sys.stderr, "Finished printing results at %s \n" %datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
   ############ self report only #####################
   elif args.proxy == "SR":  # self report only
-    print >> sys.stderr, "Assigning proxy-cases based on self report (-x SR)"
+    print >> sys.stderr, "Assigning proxy-cases based on self report (-x SR) at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cm, cf, cs)  # self report
-    print >> sys.stderr, "Finished assigning proxy-cases based on self report\n"
+    print >> sys.stderr, "Finished assigning proxy-cases based on self report at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     if args.number is not None:
       count_relatives(args.number,kinDict,phenoDict_SR, totalCol)
-      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases\n"
+      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s \n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     if args.output == "B":
       BOLT_print(phenoDict_SRl,totalCol)
@@ -370,20 +375,19 @@ def main():
       print "\t".join(header_list)
       for sample in phenoDict_SR:
         print "\t".join(phenoDict_SR[sample])
-    print >> sys.stderr, "Finished printing results\n"
+    print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
   ############# self report plus kinship ##############
   elif args.proxy == "SPK":  # self report plus kinship
-    print >> sys.stderr, "Assigning proxy-cases based on self report plus kinship (-x SPK)"
-
+    print >> sys.stderr, "Assigning proxy-cases based on self report plus kinship (-x SPK) at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cm, cf, cs)  # self report
-    print >> sys.stderr, "Finished assigning proxy-cases based on self report\n"
+    print >> sys.stderr, "Finished assigning proxy-cases based on self report at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     phenoDict_SRPK = proxy_via_selfreport_plus_kinship(phenoDict_SR, kinDict, totalCol)  # self report plus kinships
-    print >> sys.stderr, "Finished refining proxy-case assignment based on kinship\n"
+    print >> sys.stderr, "Finished refining proxy-case assignment based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     if args.number is not None:
       count_relatives(args.number, kinDict, phenoDict_SRPK, totalCol)
-      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases\n"
+      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s \n"% datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     if args.output == "B":
       BOLT_print(phenoDict_SRPK, totalCol)
@@ -395,18 +399,18 @@ def main():
       print "\t".join(header_list)
       for sample in phenoDict_SRPK:
         print "\t".join(phenoDict_SRPK[sample])
-    print >> sys.stderr, "Finished printing results\n"
+    print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         ############### kinship only ####################
   elif args.proxy == "K":  # kinship only
-    print >> sys.stderr, "Assigning proxy-cases based on kinship (-x K)"
+    print >> sys.stderr, "Assigning proxy-cases based on kinship (-x K) at %s" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     phenoDict_K = proxy_via_kinship(phenoDict, kinDict, args.conservControl, totalCol, cp)
-    print >> sys.stderr, "Finished assigning proxy-case based on kinship\n"
+    print >> sys.stderr, "Finished assigning proxy-case based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     if args.number is not None:
       count_relatives(args.number,kinDict,phenoDict_K,totalCol)
-      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases\n"
+      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
     if args.output == "B":
       BOLT_print(phenoDict_K,totalCol)
@@ -418,20 +422,20 @@ def main():
       print "\t".join(header_list)
       for sample in phenoDict_K:
         print "\t".join(phenoDict_K[sample])
-    print >> sys.stderr, "Finished printing results\n"
+    print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
   ################# all proxy case designation options calculated #####################
 
   elif args.proxy == "A":  # all
-    print >> sys.stderr, "Assigning proxy-cases based on four types of logic (-x A)"
+    print >> sys.stderr, "Assigning proxy-cases based on four types of logic (-x A) at %s" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cm, cf, cs)  # self report
-    print >> sys.stderr, "Finished assigning proxy-cases based on self report\n"
+    print >> sys.stderr, "Finished assigning proxy-cases based on self report at %s \n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     phenoDict_SRMK = proxy_via_selfreport_minus_kinship(phenoDict_SR, kinDict, totalCol)  # self report minus kinship
-    print >> sys.stderr, "Finished refining proxy-case assignment based on kinship\n"
+    print >> sys.stderr, "Finished refining proxy-case assignment based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     phenoDict_SRPK = proxy_via_selfreport_plus_kinship(phenoDict_SR, kinDict, totalCol)  # self report plus kinships
-    print >> sys.stderr, "Finished refining proxy-case assignment based on kinship\n"
+    print >> sys.stderr, "Finished refining proxy-case assignment based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     phenoDict_K = proxy_via_kinship(phenoDict, kinDict, args.conservControl, totalCol, cp) #self report using only kinship
-    print >> sys.stderr, "Finished assigning proxy-cases based on kinship\n"
+    print >> sys.stderr, "Finished assigning proxy-cases based on kinship at %s\n" %datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     if args.number is not None:
       print >> sys.stderr, "This functionality is not available when -x A is invoked\n"
@@ -441,8 +445,8 @@ def main():
     else:
       for sample in phenoDict:
         print "\t".join([sample, phenoDict_SR[sample][totalCol], phenoDict_SRMK[sample][totalCol], phenoDict_SRPK[sample][totalCol], phenoDict_K[sample][totalCol]])
-    print >> sys.stderr, "Finished printing results\n"
-
+    print >> sys.stderr, "Finished printing results at %s\n" %datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+ 
   else:
     print >> sys.stderr, "Option for kinship designation not correct. Please use iether SMK, SR, SPK, K, or A.\n"
 
