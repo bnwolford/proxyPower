@@ -361,10 +361,6 @@ def main():
     phenoDict_SR = proxy_via_selfreport(phenoDict, args.conservControl, cp, cm, cf, cs)  # self report
     print >> sys.stderr, "Finished assigning proxy-cases based on self report at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    if args.number is not None:
-      count_relatives(args.number,kinDict,phenoDict_SR, totalCol)
-      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s \n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
     if args.output == "B":
       BOLT_print(phenoDict_SRl,totalCol)
     elif args.output == "P":
@@ -376,7 +372,11 @@ def main():
       for sample in phenoDict_SR:
         print "\t".join(phenoDict_SR[sample])
     print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
+    
+    if args.number is not None:
+      count_relatives(args.number,kinDict,phenoDict_SR, totalCol)
+      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s \n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
   ############# self report plus kinship ##############
   elif args.proxy == "SPK":  # self report plus kinship
     print >> sys.stderr, "Assigning proxy-cases based on self report plus kinship (-x SPK) at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -384,10 +384,6 @@ def main():
     print >> sys.stderr, "Finished assigning proxy-cases based on self report at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     phenoDict_SRPK = proxy_via_selfreport_plus_kinship(phenoDict_SR, kinDict, totalCol)  # self report plus kinships
     print >> sys.stderr, "Finished refining proxy-case assignment based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    if args.number is not None:
-      count_relatives(args.number, kinDict, phenoDict_SRPK, totalCol)
-      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s \n"% datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     if args.output == "B":
       BOLT_print(phenoDict_SRPK, totalCol)
@@ -401,16 +397,17 @@ def main():
         print "\t".join(phenoDict_SRPK[sample])
     print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        ############### kinship only ####################
+    if args.number is not None:
+      count_relatives(args.number, kinDict, phenoDict_SRPK, totalCol)
+      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s \n"% datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                  
+
+    ############### kinship only ####################
   elif args.proxy == "K":  # kinship only
     print >> sys.stderr, "Assigning proxy-cases based on kinship (-x K) at %s" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     phenoDict_K = proxy_via_kinship(phenoDict, kinDict, args.conservControl, totalCol, cp)
     print >> sys.stderr, "Finished assigning proxy-case based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    if args.number is not None:
-      count_relatives(args.number,kinDict,phenoDict_K,totalCol)
-      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
     if args.output == "B":
       BOLT_print(phenoDict_K,totalCol)
@@ -424,6 +421,10 @@ def main():
         print "\t".join(phenoDict_K[sample])
     print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+    if args.number is not None:
+      count_relatives(args.number,kinDict,phenoDict_K,totalCol)
+      print >> sys.stderr, "Finished counting relatives of each sample who are proxy-cases or cases at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
   ################# all proxy case designation options calculated #####################
 
   elif args.proxy == "A":  # all
