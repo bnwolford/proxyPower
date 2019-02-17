@@ -60,6 +60,7 @@ def get_settings():
 ######### FUNCTIONS ########
 ############################
 
+#open file taking zipped or unzipped into account
 def openFile(filename):
   if ".gz" in filename:
     command=gzip.open(filename,"rt")
@@ -106,6 +107,9 @@ def readPheno(file):
       count+=1
     else:
       line_list = line.split("\t")
+      #replace -9 with NA
+      line_list_v2=["NA" if x=="-9" else x for x in line_list]
+      print(line_list_v2)
       phenoDict[line_list[0]] = line_list
       totalCol=len(line_list)
   return phenoDict,totalCol,header
