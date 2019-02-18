@@ -53,6 +53,7 @@ def get_settings():
   parser.add_argument("-n","--number",help="Name of file in which to print number of cases/proxy-cases every sample is related to. If file is not provided then this functionality will not happen.",type=str)
   parser.add_argument("-m","--model1",help="Name of file in which to print model 1 (standard GWAS) phenotype file. This file will be similar to --pheno input file, but header for phenotype column will be F and values will be 1 for case, 0 for control, NA for missing for consistency with proxyModel.py phenotype files\n",type=str,required=True)
   args = parser.parse_args()
+  print >> sys.stderr, "%s\n" % args
   return args
 
 
@@ -302,7 +303,7 @@ def model1_print(header,cp,pd,name):
 
 def main():
   args = get_settings()
-
+  
   try:
     args.number
   except NameError:
