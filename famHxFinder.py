@@ -43,6 +43,7 @@ def get_settings():
   parser.add_argument("-k", "--kinship", help="Kinship from KING2 and requires header. Assumes FID1, ID1, FID2, ID2 and additional columns may vary.", type=str)
   parser.add_argument("-ck","--columnKin",help="0-based column number with Kinship value from KING.",default=8,type=int)
   parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be an ID specific to the individual sample (e.g. IID). Header expected",type=str,required=True)
+  parser.add_argument("-o","--output",help="Output file name",type=str,required=True)
   #parser.add_argument("-cm","--columnMother",help="0-based column number for affected mother. Expects 1 if mother is affected and 0 otherwise.", type=int,required=True)
   #parser.add_argument("-cf","--columnFather",help="0-based column number for affected father. Expects 1 if father is affected and 0 otherwise.", type=int,required=True)
   #parser.add_argument("-cs","--columnSibling",help="0-based column number for affected sibling. Expects 1 if sibling is affected and 0 otherwise.", type=int,required=True)
@@ -163,11 +164,13 @@ def main():
   
   header_list=header.split("\t")
   header_list.append("InferredFamHx") #add new column label to header
-  print "\t".join(header_list)
+  f=open(args.output,"w")
+  f.write("\t".join(header_list))
   for sample in phenoDict:
-    print "\t".join(phenoDict[sample])
+    f.write("\t".join(phenoDict[sample]))
+  f.close()
   print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
+  
 
 
 # call main
