@@ -166,8 +166,10 @@ def main():
   header_list.append("InferredFamHx") #add new column label to header
   f=open(args.output,"w")
   f.write("\t".join(header_list))
+  f.write("\n")
   for sample in phenoDict:
     f.write("\t".join(phenoDict[sample]))
+    f.write("\n")
   f.close()
   print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
   
