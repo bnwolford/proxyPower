@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #===============================================================================
-# Copyright (c) 2017 Brooke Wolford
+# Copyright (c) 2019 Brooke Wolford
 # Lab of Dr. Cristen Willer and Dr. Mike Boehnke
 # University of Michigan
 
@@ -129,7 +129,7 @@ def proxy_via_kinship(pd, kd, tc, cp):
       flag=False
       for relative in kd[sample]: #for all listed relatives
         if relative in pd: #if relative is in phenotype file
-          if pd[relative][cp]==1: #if relative is a case
+          if pd[relative][cp]=="1": #if relative is a case
             pd[sample].append("1") #assign positive family history
             flag=True #change flag 
             break
