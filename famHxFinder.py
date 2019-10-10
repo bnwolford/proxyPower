@@ -42,7 +42,8 @@ def get_settings():
   parser = argparse.ArgumentParser(description='''Script to perform proxy-case assignment using kinship matrix from KING2, self reported affected relative status of mother, father, sibling, and case/control status from EHR derived phenotypes. The default is an output of the phenotype file with an additional column holding the proxy-case assignment.''')
   parser.add_argument("-k", "--kinship", help="Kinship from KING2 and requires header. Assumes FID1, ID1, FID2, ID2 and additional columns may vary.", type=str)
   parser.add_argument("-ck","--columnKin",help="0-based column number with Kinship value from KING.",default=8,type=int)
-  parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be an ID specific to the individual sample (e.g. IID). Header expected",type=str,required=True)
+  parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be an ID specific to the individual sample (e.g. IID).",type=str,required=True)
+  parser.add_argument("-d","--header",help="Header",action='store_true')
   parser.add_argument("-o","--output",help="Output file name",type=str,required=True)
   #parser.add_argument("-cm","--columnMother",help="0-based column number for affected mother. Expects 1 if mother is affected and 0 otherwise.", type=int,required=True)
   #parser.add_argument("-cf","--columnFather",help="0-based column number for affected father. Expects 1 if father is affected and 0 otherwise.", type=int,required=True)
@@ -98,10 +99,13 @@ def readKinship(file,col):
   return kinDict
 
 #read phenotype file with case/control information for sample and affected status of relatives
-def readPheno(file):
+def readPheno(file,header_bool):
   phenoDict = {}  # initialize
   totalCol=0 #initialize count of columns so we know what is new column to add proxycase assignment
-  count=0
+  if header_bool==True:
+    count=0
+  else:
+    count=1
   f = open(file, "r")
   for line in f:
     line = line.rstrip()
@@ -109,6 +113,7 @@ def readPheno(file):
       header=line
       count+=1
     else:
+      header=""
       line_list = line.split("\t")
       #replace -9 with NA
       line_list_v2=["NA" if x=="-9" else x for x in line_list]
@@ -142,7 +147,7 @@ def main():
   args = get_settings()
   
   #always read phenotype file
-  phenoDict, totalCol, header = readPheno(args.pheno)  # read self report file
+  phenoDict, totalCol, header = readPheno(args.pheno,args.header)  # read self report file
   print >> sys.stderr, "Finished reading phenotype file %s at %s\n" % (args.pheno, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
   
   kinDict = readKinship(args.kinship,args.columnKin)  # read kinship file
@@ -161,12 +166,13 @@ def main():
   print >> sys.stderr, "Assigning positive family history based on kinship (-x K) at %s" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
   proxy_via_kinship(phenoDict, kinDict, totalCol,cp) #edits phenodict in place
   print >> sys.stderr, "Finished assigning proxy-case based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-  
-  header_list=header.split("\t")
-  header_list.append("InferredFamHx") #add new column label to header
+
   f=open(args.output,"w")
-  f.write("\t".join(header_list))
-  f.write("\n")
+  if args.header==True:
+    header_list=header.split("\t")
+    header_list.append("InferredFamHx") #add new column label to header
+    f.write("\t".join(header_list))
+    f.write("\n")
   for sample in phenoDict:
     f.write("\t".join(phenoDict[sample]))
     f.write("\n")
