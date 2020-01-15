@@ -34,6 +34,7 @@ from itertools import islice
 import gzip, re, os, math, sys
 import copy
 import datetime
+import numpy as np
 
 ###########################
 ##### PARSE ARGUMENTS ####
@@ -148,24 +149,23 @@ def match_grs(grs,col,kinDict,out):
     ll=ls.split("\t")
     grsDict[ll[0]]=ll[col]
   o=open(".".join([out,"GRS.txt"]),"w")
-  sample_list=[]
-  score_list=[]
   for index in kinDict.keys():
+    sample_list=[]
+    score_list=[]
     sample_list.append(index)
     if index in grsDict.keys():
-      score_list.append(grsDict[index])
+      score_list.append(float(grsDict[index]))
     else:
-      score_list.append("NA")
-    for relative_list in kinDict[index]:
-      for r in relative_list:
-        sample_list.append(r)
-        if r in grsDict.keys():
-          score_list.append(grsDict[r])
+      score_list.append(np.nan)
+    for relative in kinDict[index]:
+        sample_list.append(relative)
+        if relative in grsDict.keys():
+          score_list.append(float(grsDict[relative]))
         else:
-          score_list.append("NA")
-  print(score_list)
-  print(sample_list)
-  o.write("\t".join([score_list,sample_list])
+          score_list.append(np.nan)
+    mean=np.mean(np.array(score_list[1:]))
+    o.write("\t".join([",".join(str(x) for x in score_list),",".join(sample_list),str(score_list[0]),str(mean)])) #1st value of each list is the index
+    o.write("\n")
   o.close()
       
 #########################
