@@ -44,11 +44,14 @@ def get_settings():
   parser.add_argument("-ck","--columnKin",help="0-based column number with Kinship value from KING.",default=8,type=int)
   parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be an ID specific to the individual sample (e.g. IID).",type=str,required=True)
   parser.add_argument("-d","--header",help="Header",action='store_true')
-  parser.add_argument("-o","--output",help="Output file name",type=str,required=True)
+  parser.add_argument("-o","--output",help="Output file name prefix",type=str,required=True)
   #parser.add_argument("-cm","--columnMother",help="0-based column number for affected mother. Expects 1 if mother is affected and 0 otherwise.", type=int,required=True)
   #parser.add_argument("-cf","--columnFather",help="0-based column number for affected father. Expects 1 if father is affected and 0 otherwise.", type=int,required=True)
   #parser.add_argument("-cs","--columnSibling",help="0-based column number for affected sibling. Expects 1 if sibling is affected and 0 otherwise.", type=int,required=True)
   parser.add_argument("-cp","--columnPhenotype",help="0-based column number for phenotype information. Expects 1 for case, 0 for control, NA for missing [default=12]",type=int,default=12)
+  parser.add_argument("-g","--GRS",help="File with ID that matches kinship file and GRS",type=str)
+  parser.add_argument("-cg","--columnGRS",help="0-based column number for GRS in -g file",type=int)
+                      
   args = parser.parse_args()
   print >> sys.stderr, "%s\n" % args
   return args
@@ -123,7 +126,6 @@ def readPheno(file,header_bool):
 
 #Perform proxy case assignment using information on case/control status of the sample and the kinship matrix with the rest of samples in the study
 def proxy_via_kinship(pd, kd, tc, cp):
-
   for sample in pd: #for every sample in phenotype file
     if sample in kd: #if sample is in kinship dictionary
       flag=False
@@ -138,48 +140,75 @@ def proxy_via_kinship(pd, kd, tc, cp):
     else: #if sample is not in kinship dictionary
       pd[sample].append("0") #assign negatie family history
         
-
+def match_grs(grs,col,kinDict,out):
+  f = open(grs, "r")
+  grsDict={}
+  for line in f:
+    ls = line.rstrip()
+    ll=ls.split("\t")
+    grsDict[ll[0]]=ll[col]
+  o=open(".".join([out,"GRS.txt"]),"w")
+  sample_list=[]
+  score_list=[]
+  for index in kinDict.keys():
+    sample_list.append(index)
+    if index in grsDict.keys():
+      score_list.append(grsDict[index])
+    else:
+      score_list.append("NA")
+    for relative_list in kinDict[index]:
+      for r in relative_list:
+        sample_list.append(r)
+        if r in grsDict.keys():
+          score_list.append(grsDict[r])
+        else:
+          score_list.append("NA")
+  print(score_list)
+  print(sample_list)
+  o.write("\t".join([score_list,sample_list])
+  o.close()
+      
 #########################
 ########## MAIN #########
 #########################
 
 def main():
   args = get_settings()
-  
   #always read phenotype file
   phenoDict, totalCol, header = readPheno(args.pheno,args.header)  # read self report file
   print >> sys.stderr, "Finished reading phenotype file %s at %s\n" % (args.pheno, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
   
   kinDict = readKinship(args.kinship,args.columnKin)  # read kinship file
   print >> sys.stderr, "Finished reading kinship file %s\n" %args.kinship
-
-  #print kinDict
-  #print phenoDict
-
+  
   cp=args.columnPhenotype
-#  cm=args.columnMother
-#  cf=args.columnFather
-#  cs=args.columnSibling
+  #  cm=args.columnMother
+  #  cf=args.columnFather
+  #  cs=args.columnSibling
 
+  if args.GRS and args.columnGRS:
+    match_grs(args.GRS,args.columnGRS,kinDict,args.output)
+
+    print >> sys.stderr, "Listing GRS per index sample\n"
+         
     ############### kinship only ####################
 
   print >> sys.stderr, "Assigning positive family history based on kinship (-x K) at %s" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-  proxy_via_kinship(phenoDict, kinDict, totalCol,cp) #edits phenodict in place
+  #proxy_via_kinship(phenoDict, kinDict, totalCol,cp) #edits phenodict in place
   print >> sys.stderr, "Finished assigning proxy-case based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-  f=open(args.output,"w")
+  f=open(".".join([args.output,"pheno.txt"]),"w")
   if args.header==True:
     header_list=header.split("\t")
     header_list.append("InferredFamHx") #add new column label to header
     f.write("\t".join(header_list))
     f.write("\n")
-  for sample in phenoDict:
-    f.write("\t".join(phenoDict[sample]))
-    f.write("\n")
-  f.close()
-  print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    for sample in phenoDict:
+      f.write("\t".join(phenoDict[sample]))
+      f.write("\n")
+    f.close()
+    print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
   
-
 
 # call main
 if __name__ == "__main__":
