@@ -166,7 +166,6 @@ def match_grs(grs,col,kinDict,out):
     mean=np.mean(np.array(score_list[1:]))
     o.write("\t".join([",".join(str(x) for x in score_list),",".join(sample_list),str(score_list[0]),str(mean)])) #1st value of each list is the index
     o.write("\n")
-  o.close()
       
 #########################
 ########## MAIN #########
