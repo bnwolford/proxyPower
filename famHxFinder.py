@@ -163,7 +163,7 @@ def match_grs(grs,col,kinDict,out):
   top_list=percentiles(grsDict) #get top 5th percentile samples from grs Dict
   o=open(".".join([out,"GRS.txt"]),"w") #open output file
   o2=open(".".join([out,"top5.txt"]),"w") #open output file 2
-  o2.write("\t".join(["sample","top5","fracReltop5","numRel"])) #write header
+  o2.write("\t".join(["sample","top5","fracReltop5","numRel","scoreRel"])) #write header
   o2.write("\n")
   for index in kinDict.keys(): #choose the index relative
     sample_list=[]
@@ -186,12 +186,12 @@ def match_grs(grs,col,kinDict,out):
     ##number of relatives in top 5 for index in top 5
     total_relatives=len(sample_list)
     top_relatives=sum(rel in sample_list for rel in top_list)
-           
+    print(score_list)
     if index in top_list:
-      o2.write("\t".join([index,"1",str(np.float(top_relatives)/np.float(total_relatives)),str(total_relatives)]))
+      o2.write("\t".join([index,"1",str(np.float(top_relatives)/np.float(total_relatives)),str(total_relatives),",".join(map(str,score_list))]))
       o2.write("\n")
     else:
-      o2.write("\t".join([index,"0",str(np.float(top_relatives)/np.float(total_relatives)),str(total_relatives)]))
+      o2.write("\t".join([index,"0",str(np.float(top_relatives)/np.float(total_relatives)),str(total_relatives),",".join(map(str,score_list))]))
       o2.write("\n")
     
 
