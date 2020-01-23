@@ -140,16 +140,29 @@ def proxy_via_kinship(pd, kd, tc, cp):
         pd[sample].append("0") #assign negative family history
     else: #if sample is not in kinship dictionary
       pd[sample].append("0") #assign negatie family history
-        
+
+##figure out which samples are in the top 5th percentile, return list of those IDS
+def percentiles(gd):
+  grs_list=[]
+  for sample in gd.keys():
+    grs_list.append(np.float(gd[sample]))
+  p=np.percentile(grs_list,95) #top 5th precentile 
+  top_list=[]
+  for sample in gd.keys():
+    if np.float(gd[sample]) > p:
+      top_list.append(sample) #record which samples are in the top 5th percentile
+  return(top_list)
+  
 def match_grs(grs,col,kinDict,out):
-  f = open(grs, "r")
+  f = open(grs, "r") #open GRS file 
   grsDict={}
-  for line in f:
+  for line in f: #read GRS file into dictionary
     ls = line.rstrip()
     ll=ls.split("\t")
     grsDict[ll[0]]=ll[col]
-  o=open(".".join([out,"GRS.txt"]),"w")
-  for index in kinDict.keys():
+  top_list=percentiles(grsDict) #get top 5th percentile samples
+  o=open(".".join([out,"GRS.txt"]),"w") #open output file
+  for index in kinDict.keys(): #choose the index relative
     sample_list=[]
     score_list=[]
     sample_list.append(index)
@@ -157,13 +170,17 @@ def match_grs(grs,col,kinDict,out):
       score_list.append(float(grsDict[index]))
     else:
       score_list.append(np.nan)
-    for relative in kinDict[index]:
+    for relative in kinDict[index]: #for relatives in the list corresponding to the index variant 
         sample_list.append(relative)
         if relative in grsDict.keys():
           score_list.append(float(grsDict[relative]))
         else:
           score_list.append(np.nan)
-    mean=np.mean(np.array(score_list[1:]))
+    if index in top_list:
+      total_relatives=len(sample_list)
+      top_relatives=sum(rel in sample_list for rel in top_list)
+      print(np.float(top_relatives)/np.float(total_relatives))
+    mean=np.mean(np.array(score_list[1:])) #calculate mean GRS for all relatives of the index
     o.write("\t".join([",".join(str(x) for x in score_list),",".join(sample_list),str(score_list[0]),str(mean)])) #1st value of each list is the index
     o.write("\n")
       
