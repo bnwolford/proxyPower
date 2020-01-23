@@ -160,8 +160,9 @@ def match_grs(grs,col,kinDict,out):
     ls = line.rstrip()
     ll=ls.split("\t")
     grsDict[ll[0]]=ll[col]
-  top_list=percentiles(grsDict) #get top 5th percentile samples
+  top_list=percentiles(grsDict) #get top 5th percentile samples from grs Dict
   o=open(".".join([out,"GRS.txt"]),"w") #open output file
+  o2=open(".".join([out,"top5.txt"]),"w") #open output file 2
   for index in kinDict.keys(): #choose the index relative
     sample_list=[]
     score_list=[]
@@ -176,14 +177,23 @@ def match_grs(grs,col,kinDict,out):
           score_list.append(float(grsDict[relative]))
         else:
           score_list.append(np.nan)
-    if index in top_list:
-      total_relatives=len(sample_list)
-      top_relatives=sum(rel in sample_list for rel in top_list)
-      print(np.float(top_relatives)/np.float(total_relatives))
     mean=np.mean(np.array(score_list[1:])) #calculate mean GRS for all relatives of the index
     o.write("\t".join([",".join(str(x) for x in score_list),",".join(sample_list),str(score_list[0]),str(mean)])) #1st value of each list is the index
     o.write("\n")
-      
+
+    ##number of relatives in top 5 for index in top 5
+    total_relatives=len(sample_list)
+    if index in top_list:
+      top_relatives=sum(rel in sample_list for rel in top_list)
+      o2.write("\t".join([index,str(np.float(top_relatives)/np.float(total_relatives)),str(total_relatives)]))
+      o2.write("\n")
+    else:
+      o2.write("\t".join([index,"NA",str(total_relatives)]))
+      o2.write("\n")
+    
+
+  o.close()
+  o2.close()
 #########################
 ########## MAIN #########
 #########################
