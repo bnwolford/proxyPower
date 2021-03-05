@@ -110,6 +110,7 @@ def readPheno(file,header_bool):
     count=0
   else:
     count=1
+    header=""
   f = open(file, "r")
   for line in f:
     line = line.rstrip()
@@ -117,7 +118,6 @@ def readPheno(file,header_bool):
       header=line
       count+=1
     else:
-      header=""
       line_list = line.split("\t")
       #replace -9 with NA
       line_list_v2=["NA" if x=="-9" else x for x in line_list]
@@ -186,7 +186,7 @@ def match_grs(grs,col,kinDict,out):
     ##number of relatives in top 5 for index in top 5
     total_relatives=len(sample_list)
     top_relatives=sum(rel in sample_list for rel in top_list)
-    print(score_list)
+    #print(score_list)
     if index in top_list:
       o2.write("\t".join([index,"1",str(np.float(top_relatives)/np.float(total_relatives)),str(total_relatives),",".join(map(str,score_list))]))
       o2.write("\n")
@@ -223,7 +223,7 @@ def main():
     ############### kinship only ####################
 
   print >> sys.stderr, "Assigning positive family history based on kinship (-x K) at %s" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-  #proxy_via_kinship(phenoDict, kinDict, totalCol,cp) #edits phenodict in place
+  proxy_via_kinship(phenoDict, kinDict, totalCol,cp) #edits phenodict in place
   print >> sys.stderr, "Finished assigning proxy-case based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
   f=open(".".join([args.output,"pheno.txt"]),"w")
