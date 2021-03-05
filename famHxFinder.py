@@ -43,13 +43,14 @@ def get_settings():
   parser = argparse.ArgumentParser(description='''Script to perform proxy-case assignment using kinship matrix from KING2, self reported affected relative status of mother, father, sibling, and case/control status from EHR derived phenotypes. The default is an output of the phenotype file with an additional column holding the proxy-case assignment.''')
   parser.add_argument("-k", "--kinship", help="Kinship from KING2 and requires header. Assumes FID1, ID1, FID2, ID2 and additional columns may vary.", type=str)
   parser.add_argument("-ck","--columnKin",help="0-based column number with Kinship value from KING.",default=8,type=int)
-  parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be an ID specific to the individual sample (e.g. IID).",type=str,required=True)
+  parser.add_argument("-p", "--pheno",help="Tab delimited phenotype file. First column must be an ID specific to the individual sample (e.g. IID) that matches kinship file.",type=str,required=True)
+  parser.add_argument("-cp","--columnPhenotype",help="0-based column number for phenotype information. Expects 1 for case, 0 for control, NA for missing [default=12]",type=int,default=12)
+  parser.add_argument("-cpi","--columnPhenotypeID",help="0-based column number for ID that matches kinship file and GRS file [default=0]",default=0,type=int)
   parser.add_argument("-d","--header",help="Header",action='store_true')
   parser.add_argument("-o","--output",help="Output file name prefix",type=str,required=True)
   #parser.add_argument("-cm","--columnMother",help="0-based column number for affected mother. Expects 1 if mother is affected and 0 otherwise.", type=int,required=True)
   #parser.add_argument("-cf","--columnFather",help="0-based column number for affected father. Expects 1 if father is affected and 0 otherwise.", type=int,required=True)
   #parser.add_argument("-cs","--columnSibling",help="0-based column number for affected sibling. Expects 1 if sibling is affected and 0 otherwise.", type=int,required=True)
-  parser.add_argument("-cp","--columnPhenotype",help="0-based column number for phenotype information. Expects 1 for case, 0 for control, NA for missing [default=12]",type=int,default=12)
   parser.add_argument("-g","--GRS",help="File with ID that matches kinship file and GRS",type=str)
   parser.add_argument("-cg","--columnGRS",help="0-based column number for GRS in -g file",type=int)
                       
@@ -103,7 +104,7 @@ def readKinship(file,col):
   return kinDict
 
 #read phenotype file with case/control information for sample and affected status of relatives
-def readPheno(file,header_bool):
+def readPheno(file,header_bool,phenoID):
   phenoDict = {}  # initialize
   totalCol=0 #initialize count of columns so we know what is new column to add proxycase assignment
   if header_bool==True:
@@ -121,7 +122,7 @@ def readPheno(file,header_bool):
       line_list = line.split("\t")
       #replace -9 with NA
       line_list_v2=["NA" if x=="-9" else x for x in line_list]
-      phenoDict[line_list[0]] = line_list
+      phenoDict[line_list[phenoID]] = line_list
       totalCol=len(line_list)
   return phenoDict,totalCol,header
 
@@ -204,7 +205,7 @@ def match_grs(grs,col,kinDict,out):
 def main():
   args = get_settings()
   #always read phenotype file
-  phenoDict, totalCol, header = readPheno(args.pheno,args.header)  # read self report file
+  phenoDict, totalCol, header = readPheno(args.pheno,args.header,args.columnPhenotypeID)  # read self report file
   print >> sys.stderr, "Finished reading phenotype file %s at %s\n" % (args.pheno, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
   
   kinDict = readKinship(args.kinship,args.columnKin)  # read kinship file
