@@ -195,9 +195,11 @@ def match_grs(grs,col,kinDict,out):
       o2.write("\t".join([index,"0",str(np.float(top_relatives)/np.float(total_relatives)),str(total_relatives),",".join(map(str,score_list))]))
       o2.write("\n")
     
-
   o.close()
   o2.close()
+
+  return grsDict
+
 #########################
 ########## MAIN #########
 #########################
@@ -217,7 +219,7 @@ def main():
   #  cs=args.columnSibling
 
   if args.GRS and args.columnGRS:
-    match_grs(args.GRS,args.columnGRS,kinDict,args.output)
+    grsDict=match_grs(args.GRS,args.columnGRS,kinDict,args.output)
 
     print >> sys.stderr, "Listing GRS per index sample\n"
          
@@ -225,16 +227,20 @@ def main():
 
   print >> sys.stderr, "Assigning positive family history based on kinship (-x K) at %s" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
   proxy_via_kinship(phenoDict, kinDict, totalCol,cp) #edits phenodict in place
+
   print >> sys.stderr, "Finished assigning proxy-case based on kinship at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
   f=open(".".join([args.output,"pheno.txt"]),"w")
   if args.header==True:
     header_list=header.split("\t")
     header_list.append("InferredFamHx") #add new column label to header
+    header_list.append("GRS") #add new column label to header
     f.write("\t".join(header_list))
     f.write("\n")
     for sample in phenoDict:
       f.write("\t".join(phenoDict[sample]))
+      f.write("\t")
+      f.write(str(grsDict[sample]))
       f.write("\n")
     f.close()
     print >> sys.stderr, "Finished printing results at %s\n" % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
